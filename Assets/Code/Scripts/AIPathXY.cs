@@ -128,10 +128,14 @@ public class AIPathXY : MonoBehaviour {
 	/** Only when the previous path has been returned should be search for a new path */
 	protected bool canSearchAgain = true;
 	
+	/** Tempary target that is destroyed when reached */
+	protected Transform tempTarget = null;
+	
 	/** Returns if the end-of-path has been reached
 	 * \see targetReached */
 	public bool TargetReached {
-		get {
+		get 
+		{
 			return targetReached;
 		}
 	}
@@ -222,6 +226,20 @@ public class AIPathXY : MonoBehaviour {
 		TrySearchPath ();
 	}
 	
+	/// <summary>
+	/// Moves to the given position. Destroys tempTarget if given.
+	/// </summary>
+	/// <param name='_pos'>
+	/// _pos.
+	/// </param>
+	/// <param name='tempTarget'>
+	/// Temp target.
+	/// </param>
+	public void MoveTo(Vector3 _pos)
+	{
+		seeker.StartPath (GetFeetPosition(), _pos);
+	}
+	
 	/** Requests a path to the target */
 	public virtual void SearchPath () {
 		
@@ -243,10 +261,13 @@ public class AIPathXY : MonoBehaviour {
 	
 	public virtual void OnTargetReached () {
 		//End of path has been reached
-		//If you want custom logic for when the AI has reached it's destination
-		//add it here
-		//You can also create a new script which inherits from this one
-		//and override the function in that script
+		
+		//clear temp target
+		if(tempTarget != null)
+		{
+			Destroy(tempTarget);
+			tempTarget = null;
+		}
 	}
 	
 	public void OnDestroy () {
