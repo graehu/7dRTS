@@ -4,16 +4,22 @@ using System.Collections.Generic;
 
 public class NetworkManager : MonoBehaviour {
 	
+	#region variables
+	
 	NetworkView connection = new NetworkView();
-	bool hosting = false;
-	bool connected = false;
-
+	bool hostListRecieved = false;	
+	
+	#endregion
+	
+	#region monobehaviour methods
+	
 	// Use this for initialization
 	void Start()
 	{
 		//Requesting host list
-		Debug.Log ("Requesting network host list for 2EZ7dRTS");
-		MasterServer.RequestHostList("2EZ7dRTS");	
+		Debug.Log ("Requesting host list for 2EZ7dRTS");
+		MasterServer.ClearHostList();
+		MasterServer.RequestHostList("2EZ7dRTS");
 	}
 	
 	void OnDestroy()
@@ -25,30 +31,22 @@ public class NetworkManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		if(connected == false && Network.peerType == NetworkPeerType.Disconnected)
+		if(hostListRecieved && Network.peerType == NetworkPeerType.Disconnected)
 		{
-			HostData [] hosts = null;
+			HostData [] hosts = MasterServer.PollHostList();
 			
-			if(!hosting)
-				hosts = MasterServer.PollHostList();
-			
-			//if the list isn't empty try to connect to the dude at the top!
-			if(!hosting && hosts.Length > 0)
+			if(hosts.Length > 0)
 			{
-				//Now connecting hopefully
-				//TODO: do something with error
-				Debug.Log ("Attempting to connect to " + hosts[0].ip);
-				NetworkConnectionError error = Network.Connect(hosts[0].guid);
+				//try to connect to the first host
+				Network.Connect(hosts[0].guid);
 				
+				MasterServer.ClearHostList();
 			}
-			else if (!hosting)//if it is empty, host.
+			else
 			{
-				Debug.Log("Becoming a host");
+				Debug.Log("No Hosts Found. Hosting...");
+				//become a host
 				Network.InitializeServer(1, 25000);
-				Debug.Log("Registering as a host");
-				MasterServer.RegisterHost("2EZ7dRTS", "2EasyRts");
-				
-				hosting = true;
 			}
 		}
 		
@@ -63,28 +61,68 @@ public class NetworkManager : MonoBehaviour {
 		}
 	}
 	
-	void OnFailedToConnect(NetworkConnectionError error)
+	void OnGUI()
 	{
-		//TODO: do something with error
-		Debug.Log("Failed to connect");
+		GUI.TextArea( new Rect(0, 0, 2000, 2000) , "" + Network.peerType.ToString());	
 	}
+	
+	#endregion
+	
+	#region server callbacks
+	
+	void OnServerInitialized()
+	{
+		Debug.Log("Server Initialised");
+		
+		string gameName = "2EasyRts"+((int)Random.value).ToString();
+		MasterServer.RegisterHost("2EZ7dRTS", gameName);
+	}
+	
+	void OnPlayerConnected(NetworkPlayer _player)
+	{
+		Debug.Log("Client Connected: " + _player.guid);
+		
+		//wait for game to be full and unregister as host
+		MasterServer.UnregisterHost();
+		
+		//Network.CloseConnection(); //use this to disconnect subsequent players
+	}
+	
+	#endregion
+	
+	#region client callback
 	
 	void OnConnectedToServer()
 	{
-		connected = true;
-		Debug.Log("Connected Yay!!!");
+		Debug.Log("Connected To Server");
 		//move to next scene.
 	}
 	
-	void OnGUI()
+	void OnFailedToConnect(NetworkConnectionError error)
 	{
-		GUI.TextArea( new Rect(0, 0, 2000, 2000) , "" + (connected?"Connected":"Disconnected"));	
+		//TODO: do something with error
+		Debug.Log("Connection Error: " + error.ToString());
 	}
 	
-	void OnPlayerConnected()
+	#endregion
+	
+	#region master server callbacks
+	
+	void OnMasterServerEvent(MasterServerEvent _event)
 	{
-		connected = true;
-		Debug.Log("Connected Yay!!!");
-		//move to next scene
+		Debug.Log("MasterServerEvent: " + _event.ToString());
+		
+		switch(_event)
+		{
+		case MasterServerEvent.HostListReceived:
+			hostListRecieved = true;
+			break;
+		case MasterServerEvent.RegistrationSucceeded:
+			Debug.Log("Waiting For Players...");
+			break;
+		}
+		
 	}
+	
+	#endregion
 }
