@@ -12,8 +12,14 @@ public class NetworkManager : MonoBehaviour {
 	void Start()
 	{
 		//Requesting host list
-		Debug.Log ("Requesting network hostlist for 2EZ7dRTS");
+		Debug.Log ("Requesting network host list for 2EZ7dRTS");
 		MasterServer.RequestHostList("2EZ7dRTS");	
+	}
+	
+	void OnDestroy()
+	{
+		MasterServer.UnregisterHost();
+		Network.Disconnect();
 	}
 	
 	// Update is called once per frame
@@ -39,6 +45,7 @@ public class NetworkManager : MonoBehaviour {
 			{
 				Debug.Log("Becoming a host");
 				Network.InitializeServer(1, 25000);
+				Debug.Log("Registering as a host");
 				MasterServer.RegisterHost("2EZ7dRTS", "2EasyRts");
 				
 				hosting = true;
@@ -67,6 +74,11 @@ public class NetworkManager : MonoBehaviour {
 		connected = true;
 		Debug.Log("Connected Yay!!!");
 		//move to next scene.
+	}
+	
+	void OnGUI()
+	{
+		GUI.TextArea( new Rect(0, 0, 2000, 2000) , "" + (connected?"Connected":"Disconnected"));	
 	}
 	
 	void OnPlayerConnected()
