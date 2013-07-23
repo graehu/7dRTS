@@ -6,8 +6,10 @@ public class NetworkManager : MonoBehaviour {
 	
 	#region variables
 	
-	NetworkView connection = new NetworkView();
+	const string GAME_TYPE = "2EZ7dRTS";
+	
 	bool hostListRecieved = false;	
+	bool connectingToServer = false;
 	
 	#endregion
 	
@@ -17,9 +19,9 @@ public class NetworkManager : MonoBehaviour {
 	void Start()
 	{
 		//Requesting host list
-		Debug.Log ("Requesting host list for 2EZ7dRTS");
+		Debug.Log ("Requesting host list for " + GAME_TYPE);
 		MasterServer.ClearHostList();
-		MasterServer.RequestHostList("2EZ7dRTS");
+		MasterServer.RequestHostList("GAME_TYPE");
 	}
 	
 	void OnDestroy()
@@ -31,22 +33,29 @@ public class NetworkManager : MonoBehaviour {
 	// Update is called once per frame
 	void Update ()
 	{
-		if(hostListRecieved && Network.peerType == NetworkPeerType.Disconnected)
+		if(Network.peerType == NetworkPeerType.Disconnected)
 		{
-			HostData [] hosts = MasterServer.PollHostList();
-			
-			if(hosts.Length > 0)
+			if(hostListRecieved && !connectingToServer)
 			{
-				//try to connect to the first host
-				Network.Connect(hosts[0].guid);
+				HostData [] hosts = MasterServer.PollHostList();
 				
-				MasterServer.ClearHostList();
-			}
-			else
-			{
-				Debug.Log("No Hosts Found. Hosting...");
-				//become a host
-				Network.InitializeServer(1, 25000);
+				if( hosts.Length > 0)
+				{
+					Debug.Log("Connecting To Server: " + hosts[0].gameName);
+					
+					//try to connect to the first host
+					Network.Connect(hosts[0].guid);
+					
+					connectingToServer = true;
+					
+					MasterServer.ClearHostList();
+				}
+				else
+				{
+					Debug.Log("No Hosts Found. Hosting...");
+					//become a host
+					Network.InitializeServer(1, 25000);
+				}
 			}
 		}
 		
@@ -74,7 +83,10 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log("Server Initialised");
 		
-		string gameName = "2EasyRts"+((int)Random.value).ToString();
+		string gameName = "Aaron's Game";
+		
+		Debug.Log("Registering Game: " + gameName);
+		
 		MasterServer.RegisterHost("2EZ7dRTS", gameName);
 	}
 	
@@ -96,12 +108,21 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log("Connected To Server");
 		//move to next scene.
+		
+		connectingToServer = false;
+	}
+	
+	void OnDisconnectedFromServer(NetworkDisconnection info)
+	{
+		Debug.Log(info.ToString());
 	}
 	
 	void OnFailedToConnect(NetworkConnectionError error)
 	{
 		//TODO: do something with error
 		Debug.Log("Connection Error: " + error.ToString());
+		
+		connectingToServer = false;
 	}
 	
 	#endregion
