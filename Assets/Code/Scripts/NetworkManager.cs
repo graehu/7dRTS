@@ -6,7 +6,7 @@ public class NetworkManager : MonoBehaviour {
 	
 	NetworkView connection = new NetworkView();
 	bool hosting = false;
-	bool connected = true;
+	bool connected = false;
 
 	// Use this for initialization
 	void Start()
