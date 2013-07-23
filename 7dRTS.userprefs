@@ -1,0 +1,20 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Tools\AstarPathfindingProject\Editor\AstarPathEditor.cs">
+    <Files>
+      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="216" Column="78" />
+      <File FileName="Assets\test\AimingBehaviour.cs" Line="29" Column="4" />
+      <File FileName="Assets\test\Wind.cs" Line="29" Column="4" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="414" Column="86" />
+      <File FileName="Assets\test\PhysicsBody.cs" Line="63" Column="3" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\astarclasses.cs" Line="1" Column="1" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Editor\AstarPathEditor.cs" Line="1827" Column="51" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore>
+      <Breakpoint file="c:\Users\Graehu\Documents\work\7dRTS\Assets\AstarPathfindingProject\Core\AI\Seeker.cs" line="414" />
+    </BreakpointStore>
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>

@@ -10,7 +10,8 @@ public class PlayerControl : MonoBehaviour {
 		None,
 		PendingRelease,
 		SelectingArea,
-		Selected
+		Selected,
+		Aiming
 	}
 	
 	#endregion
@@ -20,19 +21,38 @@ public class PlayerControl : MonoBehaviour {
 	public LayerMask unitMask = new LayerMask();
 	public LayerMask movePlaneMask = new LayerMask();
 	public float distanceBeforeAreaSelect = 10f;
+	public float maxAimingDistance = 5f;
+	//TODO: Move to protected
+	public List<UnitTracker> selectedUnits = new List<UnitTracker>();
+	public SelectionState selectState = SelectionState.None;
 	
 	
 	#endregion
 	
 	#region protected variables
 	
-	public List<UnitTracker> selectedUnits = new List<UnitTracker>();
-	public SelectionState selectState = SelectionState.None;
 	protected Vector3 mouseDown = Vector2.zero;
+	protected Vector2 aimVector = Vector2.zero;
+	protected UnitTracker aimingUnit = null;
 	
 	#endregion
 	
 	#region public methods
+	
+	public void Fire()
+	{
+		GameObject rocket = Resources.Load("Rocket") as GameObject;
+		GameObject instRocket = Instantiate(rocket) as GameObject;
+		PhysicsBody phyRocket = instRocket.GetComponent("PhysicsBody") as PhysicsBody;
+		//instRocket.transform.position = aimingUnit.transform.position;
+		phyRocket.Position = aimingUnit.transform.position;
+		phyRocket.ApplyForce(aimVector);
+		Debug.Log( "Fire!!!" + "x: " + aimVector.x + ", y:" + aimVector.y);
+	}
+	public void Aim(Vector2 _aimVector)
+	{
+		aimVector = _aimVector;
+	}
 	
 	public bool TrySelect(Vector2 _screenPos)
 	{
@@ -193,10 +213,63 @@ public class PlayerControl : MonoBehaviour {
 			switch(selectState)
 			{
 			case SelectionState.Selected:
-				Ray ray = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
+				//Test for a unit
+				Ray characterRay = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
+		
 				RaycastHit hitInfo = new RaycastHit();
-				if(Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask))
-					MoveSelectedUnitsTo(hitInfo.point);
+				
+				if( Physics.Raycast(characterRay, out hitInfo, 1000, unitMask) )
+				{
+					//TODO: Tidy this functionality up. (change when assets arrive)
+					if(hitInfo.collider != null)
+					{
+						UnitTracker unit = hitInfo.collider.GetComponent<UnitTracker>();
+						if(unit != null && selectedUnits.Contains(unit))
+						{
+							selectState = SelectionState.Aiming;
+							aimingUnit = unit;
+						}
+					}
+				}
+				else
+				{	
+					Ray ray = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
+					if(Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask))
+						MoveSelectedUnitsTo(hitInfo.point);
+				}
+				break;
+			}
+		}
+		else if(Input.GetMouseButtonUp(1))
+		{
+			switch(selectState)
+			{
+			case SelectionState.Aiming:
+				if(selectedUnits.Count > 0)
+					selectState = SelectionState.Selected;
+				else selectState = SelectionState.None;
+				Fire();
+				break;
+			}
+		}
+		else
+		{
+			switch(selectState)
+			{
+			case SelectionState.Aiming: //TODO: If aiming bugs occur insure mouse is depressed.
+				//Update aiming direction
+				RaycastHit hitInfo = new RaycastHit();
+				Ray ray = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
+				if(aimingUnit != null && Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask))
+				{
+					Vector3 v = hitInfo.point - aimingUnit.transform.position;
+					if(v.magnitude > maxAimingDistance)
+					{
+						v = v.normalized*maxAimingDistance;
+					}
+					Aim(v);
+				}
+					
 				break;
 			}
 		}
