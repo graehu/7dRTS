@@ -337,9 +337,12 @@ public class AIPathXY : MonoBehaviour {
 		if (navController != null) {
 			navController.SimpleMove (GetFeetPosition(),dir);
 		} else if (controller != null) {
-			controller.SimpleMove (dir);
+			controller.Move (dir);
 		} else if (rigid != null) {
-			rigid.AddForce (dir);
+			if(rigid.isKinematic)
+				rigid.MovePosition(rigid.position + dir*Time.deltaTime);
+			else
+				rigid.velocity = dir;
 		} else {
 			transform.Translate (dir*Time.deltaTime, Space.World);
 		}

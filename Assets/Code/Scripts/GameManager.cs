@@ -1,18 +1,24 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public static class GameManager
+public class GameManager : MonoBehaviour
 {
 	#region static variables
 	
+	public const int TURN_BUFFER_SIZE = 1;
+	
+	private static GameManager instance = null;
+	
+	public static int CurrentTurn { get { return instance.currentTurn; } }
+	
+	
 	public static int clientTeam = 0;
-		
 		
 	private static Dictionary<int,List<UnitTracker>> teams = new Dictionary<int, List<UnitTracker>>();
 	
 	#endregion
 	
-	#region public methods
+	#region static methods
 	
 	public static void AddUnit(int _teamID, UnitTracker _unit)
 	{
@@ -49,6 +55,69 @@ public static class GameManager
 			allUnits.AddRange(team);
 		}
 		return allUnits;
+	}
+	
+	#endregion
+	
+	
+	#region public variables
+	
+	
+	
+	#endregion
+	
+	#region protected variables
+	
+	public int currentTurn = 0;
+	public float turnTick = 0;
+	
+	#endregion
+	
+	#region public methods
+	
+	#endregion
+	
+	#region monobehaviour methods
+	
+	void Awake()
+	{
+		if(instance != null)
+			Destroy(instance.gameObject);
+		instance = this;
+	}
+	
+	void LateUpdate()
+	{
+		turnTick += Time.deltaTime;
+		float turnLength = 1f / Network.sendRate;
+		if(turnTick > turnLength )
+		{
+			//TODO: validate number of player controls matches number of players
+			PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
+			
+			Time.timeScale = 1;
+			
+			foreach(PlayerControl p in players)
+			{						
+				if(!p.IsUpToDate)
+				{
+					//pause simulation
+					Time.timeScale = 0;
+					return;
+				}
+				
+				p.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
+			}
+			
+			foreach(PlayerControl p in players)
+			{
+				p.ProcessTurn(currentTurn);
+			}
+			
+			turnTick = turnTick - turnLength;
+			
+			currentTurn++; //increment turn
+		}
 	}
 	
 	#endregion

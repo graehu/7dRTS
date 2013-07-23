@@ -3,7 +3,10 @@ using System.Collections;
 
 public class UnitTracker : MonoBehaviour {
 	
-	public int teamID = 0;
+	public int unitID = 0;
+	public int teamID = 0;	
+	
+	#region monobehaviour methods
 	
 	// Use this for initialization
 	void Awake()
@@ -20,4 +23,6 @@ public class UnitTracker : MonoBehaviour {
 	void Update () {
 	
 	}
+	
+	#endregion
 }
