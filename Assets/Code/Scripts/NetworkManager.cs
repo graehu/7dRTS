@@ -21,7 +21,7 @@ public class NetworkManager : MonoBehaviour {
 		//Requesting host list
 		Debug.Log ("Requesting host list for " + GAME_TYPE);
 		MasterServer.ClearHostList();
-		MasterServer.RequestHostList("GAME_TYPE");
+		MasterServer.RequestHostList(GAME_TYPE);
 	}
 	
 	void OnDestroy()
@@ -87,7 +87,7 @@ public class NetworkManager : MonoBehaviour {
 		
 		Debug.Log("Registering Game: " + gameName);
 		
-		MasterServer.RegisterHost("2EZ7dRTS", gameName);
+		MasterServer.RegisterHost(GAME_TYPE, gameName);
 	}
 	
 	void OnPlayerConnected(NetworkPlayer _player)

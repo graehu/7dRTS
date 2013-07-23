@@ -1,6 +1,17 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs">
+    <Files>
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\AIPath.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\AIPathXY.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\GameManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="414" Column="57" />
+      <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\NetworkManager.cs" Line="90" Column="29" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Editor\AstarPathEditor.cs" Line="1" Column="1" />
+    </Files>
+  </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
