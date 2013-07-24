@@ -25,8 +25,10 @@ public class PlayerControl : MonoBehaviour {
 		public int turnID = 0;
 		public ControlAction action = PlayerControl.ControlAction.None;
 		public Vector2 aimVector = Vector2.zero;
-		public Vector3 mouseDown = Vector3.zero;
-		public Vector3 mouseUp = Vector3.zero;
+		
+		//cursor positions in world space on the game plane
+		public Vector3 worldMouseDown = Vector2.zero;
+		public Vector2 worldMouseUp = Vector2.zero;
 		
 		public ControlSnapShot Clone ()
 		{
@@ -85,6 +87,9 @@ public class PlayerControl : MonoBehaviour {
 	
 	protected UnitTracker aimingUnit = null;
 	
+	protected Vector3 lastMouseDownPos = Vector3.zero;
+	protected Vector3 lastMouseUpPos = Vector3.zero;
+	
 	#endregion
 	
 	#region public methods
@@ -108,43 +113,36 @@ public class PlayerControl : MonoBehaviour {
 		snapShot.aimVector = _aimVector;
 	}
 	
-	public bool TrySelect(Vector2 _screenPos)
-	{
+	public bool TrySelect(Vector3 _pos)
+	{		
 		bool r = false;
 		
 		DeselectAll();
 		
-		Ray ray = Camera.mainCamera.ScreenPointToRay(_screenPos);
-		
-		RaycastHit hitInfo = new RaycastHit();
-		
-		if( Physics.Raycast(ray, out hitInfo, 1000, unitMask) )
+		UnitTracker unit = GetUnitAtPosition(_pos);
+		if(unit != null)
 		{
-			if(hitInfo.collider != null)
-			{
-				UnitTracker unit = hitInfo.collider.GetComponent<UnitTracker>();
-				if(unit != null && unit.teamID == GameManager.clientTeam)
-				{
-					Select(unit);
-					r = true;
-				}
-			}
+			Select(unit);
+			r = true;
 		}
-		
 		return r;
 	}
 	
-	public bool TrySelectArea(Rect _screenArea)
+	public bool TrySelectArea(Vector3 p1, Vector3 p2)
 	{
 		bool r = false;
 		
 		DeselectAll();
 		
-		List<UnitTracker> team = GameManager.GetTeam(GameManager.clientTeam);
+		//TODO create rect from points and test world pos along plane
+		Rect area = Rect.MinMaxRect(Mathf.Min(p1.x,p2.x), Mathf.Min(p1.y,p2.y), 
+									Mathf.Max(p1.x,p2.x), Mathf.Max(p1.y,p2.y));
+		
+		List<UnitTracker> team = GameManager.GetTeam(GameManager.localTeam);
 		for(int i = 0; i < team.Count; i++)
 		{
-			Vector2 screenPos = Camera.mainCamera.WorldToScreenPoint( team[i].transform.position );
-			if(_screenArea.Contains(screenPos))
+			Vector2 pos = team[i].transform.position;
+			if(area.Contains(pos))
 			{
 				Select(team[i]);
 				r = true;
@@ -187,6 +185,20 @@ public class PlayerControl : MonoBehaviour {
 		}
 	}
 	
+	public UnitTracker GetUnitAtPosition(Vector3 _pos)
+	{
+		List<UnitTracker> units = GameManager.GetTeam(GameManager.localTeam);
+		
+		foreach(UnitTracker unit in units)
+		{
+			if(unit.collider.bounds.Contains(_pos))
+			{
+				return unit;
+			}
+		}
+		return null;
+	}
+	
 	#endregion
 	
 	#region input methods
@@ -202,8 +214,8 @@ public class PlayerControl : MonoBehaviour {
 		s.turnID = _turnID;
 		turnBuffer.Add(s);
 		
-		//remove all old turns
-		turnBuffer.RemoveAll(t => t.turnID < GameManager.CurrentTurn);
+		//remove expired turned
+		turnBuffer.RemoveAll(t => t.turnID < GameManager.CurrentTurn - GameManager.TURN_BUFFER_SIZE);
 		
 		//clear action
 		snapShot.action = ControlAction.None;
@@ -213,34 +225,46 @@ public class PlayerControl : MonoBehaviour {
 	{
 		Debug.Log(string.Format("Processing Turn {0}", _turnID));
 		
+		//temp variables
+		RaycastHit hitInfo = new RaycastHit();
+		
 		//get turn
 		ControlSnapShot s = turnBuffer.Find(t => t.turnID == _turnID);
-		turnBuffer.Remove(s);
 		
 		switch(s.action)
 		{
 		case ControlAction.None:
 			break;
 		case ControlAction.SelectSingle:
-			if(!TrySelect(s.mouseDown))
+			if(!TrySelect(s.worldMouseDown))
 				DeselectAll();
 			break;
 		case ControlAction.SelectArea:
-			Rect area = Rect.MinMaxRect(Mathf.Min(s.mouseDown.x,s.mouseUp.x), Mathf.Min(s.mouseDown.y,s.mouseUp.y),
-										Mathf.Max(s.mouseDown.x,s.mouseUp.x), Mathf.Max(s.mouseDown.y,s.mouseUp.y) );
-			if(!TrySelectArea(area))
+			if(!TrySelectArea(s.worldMouseDown,s.worldMouseUp))
 				DeselectAll();
 			break;
 		case ControlAction.MoveSelected:
-			Ray ray = Camera.mainCamera.ScreenPointToRay(s.mouseDown);
-			RaycastHit hitInfo = new RaycastHit();
-			if(Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask))
-				MoveSelectedUnitsTo(hitInfo.point);
+			MoveSelectedUnitsTo(s.worldMouseDown);
 			break;
 		case ControlAction.FireSelected:
 			Fire(s.aimVector);
 			break;
 		}
+	}
+	
+	/// <summary>
+	/// Gets the world mouse position by raycasting against the game plane
+	/// </summary>
+	/// <returns>
+	/// The world mouse position.
+	/// </returns>
+	public Vector3 GetWorldMousePosition()
+	{
+		//TODO handle case where ray doesn't intersect plane
+		Ray ray = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
+		RaycastHit hitInfo = new RaycastHit();
+		Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask);
+		return hitInfo.point;
 	}
 	
 	#endregion
@@ -250,8 +274,17 @@ public class PlayerControl : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
 	{
-		if(!string.IsNullOrEmpty(networkView.owner.ipAddress) && networkView.owner != Network.player)
-			this.enabled = false;
+		if(!string.IsNullOrEmpty(networkView.owner.ipAddress))
+		{
+			if(networkView.owner == Network.player)
+				name = "LocalPlayerContol";
+			else
+			{
+				name = "OtherPlayerControl";
+				this.enabled = false;
+				return;
+			}
+		}
 		
 		//warm buffer to desired size
 		turnBuffer.Clear();
@@ -262,11 +295,6 @@ public class PlayerControl : MonoBehaviour {
 			s.turnID = i;
 			turnBuffer.Add(s);
 		}
-		
-		if(networkView.owner == Network.player)
-			name = "me";
-		else
-			name = "them";
 	}
 	
 	void OnGUI ()
@@ -274,135 +302,138 @@ public class PlayerControl : MonoBehaviour {
 		switch(selectState)
 		{
 		case SelectionState.SelectingArea:
-			ControlSnapShot s = snapShot;
-			
-			Vector2 mouseUp = Input.mousePosition;
-			if(s.action == ControlAction.SelectArea)
-				mouseUp = s.mouseUp;
-			
-			Rect area = Rect.MinMaxRect(Mathf.Min(s.mouseDown.x,mouseUp.x), Mathf.Min(Screen.height-s.mouseDown.y,Screen.height-mouseUp.y),
-										Mathf.Max(s.mouseDown.x,mouseUp.x), Mathf.Max(Screen.height-s.mouseDown.y,Screen.height-mouseUp.y) );
-			GUI.Box(area,"");
+			if(Input.GetMouseButton(0))
+			{				
+				Vector3 p1 = Camera.mainCamera.WorldToScreenPoint(snapShot.worldMouseDown);
+				Vector3 p2 = Camera.mainCamera.WorldToScreenPoint(GetWorldMousePosition());
+				
+				Rect area = Rect.MinMaxRect(Mathf.Min(p1.x, p2.x), Mathf.Min(Screen.height - p1.y, Screen.height - p2.y), 
+											Mathf.Max(p1.x, p2.x), Mathf.Max(Screen.height - p1.y, Screen.height - p2.y));
+				
+				GUI.Box(area,"");
+			}
 			break;
 		}
 	}
 	// Update is called once per frame
 	void Update () 
-	{				
-		if(Input.GetMouseButtonDown(0))
+	{	
+		//do not process left mouse if right if pressed
+		if( Input.GetMouseButton(1) == false)
 		{
-			//cache pos
-			snapShot.mouseDown = Input.mousePosition;
-			
-			switch(selectState)
+			if(Input.GetMouseButtonDown(0))
 			{
-			case SelectionState.None:
-			case SelectionState.Selected:
-				//raycast test for selection
-				selectState = SelectionState.PendingRelease;
-				break;
-			case SelectionState.PendingRelease:
-				//we shouldn't be here...
-				break;
-			case SelectionState.SelectingArea:
-				//we shouldn't be here...
-				break;
+				//cache pos
+				lastMouseDownPos = Input.mousePosition;
+				snapShot.worldMouseDown = GetWorldMousePosition();
+				
+				switch(selectState)
+				{
+				case SelectionState.None:
+				case SelectionState.Selected:
+					//raycast test for selection
+					selectState = SelectionState.PendingRelease;
+					break;
+				case SelectionState.PendingRelease:
+					//we shouldn't be here...
+					break;
+				case SelectionState.SelectingArea:
+					//we shouldn't be here...
+					break;
+				}
 			}
-		}
-		else if(Input.GetMouseButtonUp(0))
-		{
-			snapShot.mouseUp = Input.mousePosition;
-			
-			switch(selectState)
+			else if(Input.GetMouseButtonUp(0))
 			{
-			case SelectionState.None:
-			case SelectionState.Selected:
-				//nothing to do
-				break;
-			case SelectionState.PendingRelease:
-				//perform single select
-				snapShot.action = ControlAction.SelectSingle;
-				break;
-			case SelectionState.SelectingArea:
-				//perform selection in given area
-				snapShot.action = ControlAction.SelectArea;
-				break;
+				lastMouseUpPos = Input.mousePosition;
+				snapShot.worldMouseUp = GetWorldMousePosition();
+				
+				switch(selectState)
+				{
+				case SelectionState.None:
+				case SelectionState.Selected:
+					//nothing to do
+					break;
+				case SelectionState.PendingRelease:
+					//perform single select
+					snapShot.action = ControlAction.SelectSingle;
+					break;
+				case SelectionState.SelectingArea:
+					//perform selection in given area
+					snapShot.action = ControlAction.SelectArea;
+					break;
+				}
 			}
-		}
-		else if( Input.GetMouseButton(0) )
-		{
-			//test for movement
-			if( selectState == SelectionState.PendingRelease && Vector3.Distance(snapShot.mouseDown, Input.mousePosition) > distanceBeforeAreaSelect )
-				selectState = SelectionState.SelectingArea;
+			else if( Input.GetMouseButton(0) )
+			{
+				//test for movement
+				if( selectState == SelectionState.PendingRelease && Vector3.Distance(lastMouseDownPos, Input.mousePosition) > distanceBeforeAreaSelect )
+					selectState = SelectionState.SelectingArea;
+			}
 		}
 		
-		if( Input.GetMouseButtonDown(1) )
+		//do not process right mouse if left if pressed
+		if( Input.GetMouseButton(0) == false)
 		{
-			snapShot.mouseDown = Input.mousePosition;
-			
-			switch(selectState)
+			if( Input.GetMouseButtonDown(1) )
 			{
-			case SelectionState.Selected:
-				//Test for a unit
-				Ray characterRay = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
-		
-				RaycastHit hitInfo = new RaycastHit();
+				lastMouseDownPos = Input.mousePosition;
+				snapShot.worldMouseDown = GetWorldMousePosition();
 				
-				if( Physics.Raycast(characterRay, out hitInfo, 1000, unitMask) )
+				switch(selectState)
 				{
-					//TODO: Tidy this functionality up. (change when assets arrive)
-					if(hitInfo.collider != null)
-					{
-						UnitTracker unit = hitInfo.collider.GetComponent<UnitTracker>();
-						if(unit != null && selectedUnits.Contains(unit))
-						{
-							selectState = SelectionState.Aiming;
-							aimingUnit = unit;
-						}
-					}
-				}
-				else
-				{	
-					snapShot.action = ControlAction.MoveSelected;
-				}
-				break;
-			}
-		}
-		else if(Input.GetMouseButtonUp(1))
-		{
-			snapShot.mouseUp = Input.mousePosition;
+				case SelectionState.Selected:
 			
-			switch(selectState)
-			{
-			case SelectionState.Aiming:
-				if(selectedUnits.Count > 0)
-					selectState = SelectionState.Selected;
-				else selectState = SelectionState.None;
-				
-				snapShot.action = ControlAction.FireSelected;
-				
-				break;
-			}
-		}
-		else
-		{
-			switch(selectState)
-			{
-			case SelectionState.Aiming: //TODO: If aiming bugs occur insure mouse is depressed.
-				//Update aiming direction
-				RaycastHit hitInfo = new RaycastHit();
-				Ray ray = Camera.mainCamera.ScreenPointToRay(Input.mousePosition);
-				if(aimingUnit != null && Physics.Raycast(ray, out hitInfo, 1000, movePlaneMask))
-				{
-					Vector3 v = hitInfo.point - aimingUnit.transform.position;
-					if(v.magnitude > maxAimingDistance)
-					{
-						v = v.normalized*maxAimingDistance;
-					}
-					Aim(v);
-				}
+					UnitTracker unit = GetUnitAtPosition(snapShot.worldMouseDown);
 					
-				break;
+					if(unit != null && selectedUnits.Contains(unit))
+					{
+						selectState = SelectionState.Aiming;
+						aimingUnit = unit;
+					}
+					else
+					{	
+						snapShot.action = ControlAction.MoveSelected;
+					}
+					break;
+				}
+			}
+			else if(Input.GetMouseButtonUp(1))
+			{
+				lastMouseUpPos = Input.mousePosition;
+				snapShot.worldMouseUp = GetWorldMousePosition();
+				
+				switch(selectState)
+				{
+				case SelectionState.Aiming:
+					if(selectedUnits.Count > 0)
+						selectState = SelectionState.Selected;
+					else selectState = SelectionState.None;
+					
+					snapShot.action = ControlAction.FireSelected;
+					
+					break;
+				}
+			}
+			else if(Input.GetMouseButton(1))
+			{
+				switch(selectState)
+				{
+				case SelectionState.Aiming:
+					
+					//Update aiming direction
+					if(aimingUnit != null)
+					{
+						Vector3 pos = GetWorldMousePosition();
+						Vector3 v = pos - aimingUnit.transform.position;
+						if(v.magnitude > maxAimingDistance)
+						{
+							v = v.normalized*maxAimingDistance;
+						}
+						Aim(v);
+					}
+						
+					break;
+				}
 			}
 		}
 	}
@@ -440,8 +471,8 @@ public class PlayerControl : MonoBehaviour {
 				turnID = s.turnID;
 				action = (int)s.action;
 				aimVector = s.aimVector;
-				mouseDown = s.mouseDown;
-				mouseUp = s.mouseUp;
+				mouseUp = s.worldMouseUp;
+				mouseDown = s.worldMouseDown;
 			}
 			else //create new snapshot to read into
 				s = new ControlSnapShot();
@@ -450,8 +481,8 @@ public class PlayerControl : MonoBehaviour {
 			stream.Serialize(ref turnID);
 			stream.Serialize(ref action);
 			stream.Serialize(ref aimVector);
-			stream.Serialize(ref mouseDown);
 			stream.Serialize(ref mouseUp);
+			stream.Serialize(ref mouseDown);
 			
 			//if we're reading, fill new snapshot
 			if(stream.isReading)
@@ -459,8 +490,8 @@ public class PlayerControl : MonoBehaviour {
 				s.turnID = turnID;
 				s.action = (ControlAction) action;
 				s.aimVector = aimVector;
-				s.mouseDown = mouseDown;
-				s.mouseUp = mouseUp;
+				s.worldMouseUp = mouseUp;
+				s.worldMouseDown = mouseDown;
 				turnBuffer.Add(s);
 			}
 			
