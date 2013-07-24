@@ -149,16 +149,24 @@ public class GameManager : MonoBehaviour
 	{
 		if(Network.connections.Length == maxConnections)
 		{
-			for(int i = 0; i < Network.connections.Length; i++)
+			InitialiseGame(0, new NetworkMessageInfo());
+			for(int i = 1; i < Network.connections.Length; i++)
 			{
 				int teamID = i;
-				networkView.RPC("BeginGame", Network.connections[i], teamID);
+				networkView.RPC("InitialiseGame", Network.connections[i], teamID);
 			}
+			networkView.RPC("BeginGame", RPCMode.All);
 		}
 	}
 	
 	[RPC]
-	void BeginGame(int _teamID, NetworkMessageInfo _info)
+	void InitialiseGame(int _teamID, NetworkMessageInfo _info)
+	{
+		localTeam = _teamID;
+	}
+	
+	[RPC]
+	void BeginGame(NetworkMessageInfo _info)
 	{
 		//TODO: this should be done after the network level loading
 		GameObject gobj = Network.Instantiate(playerContolPrefab.gameObject, Vector3.zero, Quaternion.identity, 0) as GameObject;
@@ -166,8 +174,6 @@ public class GameManager : MonoBehaviour
 		
 		lastTurnTimestamp = (float)_info.timestamp;
 		isRunning = true;
-		
-		localTeam = _teamID;
 	}
 	
 	void BeginLocalGame()
