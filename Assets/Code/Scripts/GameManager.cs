@@ -63,13 +63,17 @@ public class GameManager : MonoBehaviour
 	#region public variables
 	
 	public PlayerControl playerContolPrefab = null;
+	public int maxConnections = 1;
 	
 	#endregion
 	
 	#region protected variables
 	
+	protected bool isRunning = false;
 	protected PlayerControl localPlayerControl = null;
+	
 	public int currentTurn = 0;
+	public float lastNetworkTime = 0;
 	public float turnTick = 0;
 	
 	#endregion
@@ -89,35 +93,40 @@ public class GameManager : MonoBehaviour
 	
 	void LateUpdate()
 	{
-		turnTick += Time.deltaTime;
-		float turnLength = 1f / Network.sendRate;
-		if(turnTick > turnLength )
+		if(isRunning)
 		{
-			//TODO: validate number of player controls matches number of players
-			PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
+			turnTick += (float)Network.time - lastNetworkTime;
+			lastNetworkTime = (float)Network.time;
 			
-			Time.timeScale = 1;
-			
-			foreach(PlayerControl p in players)
-			{						
-				if(!p.IsUpToDate)
-				{
-					//pause simulation
-					Time.timeScale = 0;
-					return;
+			float turnLength = 1f / Network.sendRate;
+			if(turnTick > turnLength )
+			{
+				//TODO: validate number of player controls matches number of players
+				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
+				
+				Time.timeScale = 1;
+				
+				foreach(PlayerControl p in players)
+				{						
+					if(!p.IsUpToDate)
+					{
+						//pause simulation
+						Time.timeScale = 0;
+						return;
+					}
+					
+					p.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
 				}
 				
-				p.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
+				foreach(PlayerControl p in players)
+				{
+					p.ProcessTurn(currentTurn);
+				}
+				
+				turnTick = turnTick - turnLength;
+				
+				currentTurn++; //increment turn
 			}
-			
-			foreach(PlayerControl p in players)
-			{
-				p.ProcessTurn(currentTurn);
-			}
-			
-			turnTick = turnTick - turnLength;
-			
-			currentTurn++; //increment turn
 		}
 	}
 	
@@ -137,6 +146,18 @@ public class GameManager : MonoBehaviour
 		//TODO: this should be done after the network level loading
 		GameObject gobj = Network.Instantiate(playerContolPrefab.gameObject, Vector3.zero, Quaternion.identity, 0) as GameObject;
 		localPlayerControl = gobj.GetComponent<PlayerControl>();
+		
+		if(Network.connections.Length == maxConnections)
+		{
+			networkView.RPC("BeginGame", RPCMode.All);
+		}
+	}
+	
+	[RPC]
+	void BeginGame(NetworkMessageInfo _info)
+	{
+		lastNetworkTime = (float)_info.timestamp;
+		isRunning = true;
 	}
 	
 	#endregion
