@@ -62,12 +62,13 @@ public class GameManager : MonoBehaviour
 	
 	#region public variables
 	
-	
+	public PlayerControl playerContolPrefab = null;
 	
 	#endregion
 	
 	#region protected variables
 	
+	protected PlayerControl localPlayerControl = null;
 	public int currentTurn = 0;
 	public float turnTick = 0;
 	
@@ -122,7 +123,21 @@ public class GameManager : MonoBehaviour
 	
 	#endregion
 	
-	#region ctor
+	#region network callbacks
+	
+	void OnConnectedToServer()
+	{
+		//TODO: this should be done after the network level loading
+		GameObject gobj = Network.Instantiate(playerContolPrefab.gameObject, Vector3.zero, Quaternion.identity, 0) as GameObject;
+		localPlayerControl = gobj.GetComponent<PlayerControl>();
+	}
+	
+	void OnPlayerConnected(NetworkPlayer _player)
+	{
+		//TODO: this should be done after the network level loading
+		GameObject gobj = Network.Instantiate(playerContolPrefab.gameObject, Vector3.zero, Quaternion.identity, 0) as GameObject;
+		localPlayerControl = gobj.GetComponent<PlayerControl>();
+	}
 	
 	#endregion
 }

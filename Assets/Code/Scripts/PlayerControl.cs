@@ -233,7 +233,7 @@ public class PlayerControl : MonoBehaviour {
 			break;
 		}
 		
-		Debug.Log(string.Format("Player {0}: {1}", GameManager.clientTeam, s.action));
+		//Debug.Log(string.Format("Player {0}: {1}", GameManager.clientTeam, s.action));
 	}
 	
 	#endregion
@@ -249,7 +249,7 @@ public class PlayerControl : MonoBehaviour {
 		//warm buffer to desired size
 		turnBuffer.Clear();
 		snapShot = new ControlSnapShot();
-		for(int i = 0; i < GameManager.TURN_BUFFER_SIZE; i++)
+		for(int i = GameManager.CurrentTurn; i < GameManager.CurrentTurn + GameManager.TURN_BUFFER_SIZE; i++)
 		{
 			ControlSnapShot s = snapShot.Clone();
 			s.turnID = i;
@@ -401,20 +401,55 @@ public class PlayerControl : MonoBehaviour {
 	
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
 	{
-		//serialise/deserialise player input controls
-		if(stream.isWriting)
+		//temp variables
+		int turnID = -1;
+		int action = -1;
+		Vector3 aimVector = Vector3.zero;
+		Vector3 mouseUp = Vector3.zero;
+		Vector3 mouseDown = Vector3.zero;
+		
+		int bufferCount = turnBuffer.Count;
+		
+		//serialise buffer count so we know now many to recieve
+		stream.Serialize(ref bufferCount);
+		
+		if(stream.isReading)
+			turnBuffer.Clear();
+		
+		for(int i = 0; i < bufferCount; i++)
 		{
-			/*
-			stream.Serialize(snapShot.turnID);
-			stream.Serialize(snapShot.selectedUnitIDs);
-			stream.Serialize(snapShot.turnID);
-			stream.Serialize(snapShot.turnID);
-			stream.Serialize(snapShot.turnID);
-			*/
-		}
-		else
-		{
-			//Vector3 recievedPos = Vector3.zero;
+			ControlSnapShot s = turnBuffer[i];
+			
+			//if we're writing, get variables to write
+			if(stream.isWriting)
+			{
+				turnID = s.turnID;
+				action = (int)s.action;
+				aimVector = s.aimVector;
+				mouseDown = s.mouseDown;
+				mouseUp = s.mouseUp;
+			}
+			else //create new snapshot to read into
+				s = new ControlSnapShot();
+			
+			//serialise
+			stream.Serialize(ref turnID);
+			stream.Serialize(ref action);
+			stream.Serialize(ref aimVector);
+			stream.Serialize(ref mouseDown);
+			stream.Serialize(ref mouseUp);
+			
+			//if we're reading, fill new snapshot
+			if(stream.isReading)
+			{
+				s.turnID = turnID;
+				s.action = (ControlAction) action;
+				s.aimVector = aimVector;
+				s.mouseDown = mouseDown;
+				s.mouseUp = mouseUp;
+				turnBuffer.Add(s);
+			}
+			
 		}
 	}
 	

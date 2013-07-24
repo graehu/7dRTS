@@ -4,25 +4,25 @@ using System.Collections.Generic;
 
 public class NetworkManager : MonoBehaviour {
 	
-	#region variables
+	#region private variables
 	
 	const string GAME_TYPE = "2EZ7dRTS";
+	string gameName = "Aaron's Game";
 	
-	bool hostListRecieved = false;	
-	bool connectingToServer = false;
+	static bool hostListRecieved = false;
+	static bool connectingToServer = false;
 	
 	#endregion
 	
 	#region monobehaviour methods
 	
-	// Use this for initialization
 	void Start()
-	{
+ 	{
 		//Requesting host list
 		Debug.Log ("Requesting host list for " + GAME_TYPE);
 		MasterServer.ClearHostList();
 		MasterServer.RequestHostList(GAME_TYPE);
-	}
+	 }
 	
 	void OnDestroy()
 	{
@@ -54,7 +54,7 @@ public class NetworkManager : MonoBehaviour {
 				{
 					Debug.Log("No Hosts Found. Hosting...");
 					//become a host
-					Network.InitializeServer(1, 25000);
+					Network.InitializeServer(1, 25000, true);
 				}
 			}
 		}
@@ -72,7 +72,14 @@ public class NetworkManager : MonoBehaviour {
 	
 	void OnGUI()
 	{
-		GUI.TextArea( new Rect(0, 0, 2000, 2000) , "" + Network.peerType.ToString());	
+		Vector2 center = new Vector2(Screen.width*0.5f, Screen.height*0.5f);
+		
+		GUILayout.BeginVertical("Box");
+		
+		GUILayout.Label(Network.peerType.ToString());
+		
+		GUILayout.EndVertical();		
+		
 	}
 	
 	#endregion
@@ -82,8 +89,6 @@ public class NetworkManager : MonoBehaviour {
 	void OnServerInitialized()
 	{
 		Debug.Log("Server Initialised");
-		
-		string gameName = "Aaron's Game";
 		
 		Debug.Log("Registering Game: " + gameName);
 		
@@ -107,9 +112,10 @@ public class NetworkManager : MonoBehaviour {
 	void OnConnectedToServer()
 	{
 		Debug.Log("Connected To Server");
-		//move to next scene.
 		
 		connectingToServer = false;
+		
+		
 	}
 	
 	void OnDisconnectedFromServer(NetworkDisconnection info)
