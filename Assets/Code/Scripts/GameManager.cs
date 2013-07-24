@@ -156,7 +156,14 @@ public class GameManager : MonoBehaviour
 				networkView.RPC("InitialiseGame", Network.connections[i], teamID);
 			}
 			networkView.RPC("BeginGame", RPCMode.All);
+			
+			MasterServer.UnregisterHost();
 		}
+	}
+	
+	void OnPlayerDisconnected(NetworkPlayer _player)
+	{
+		Application.LoadLevel(Application.loadedLevel);
 	}
 	
 	[RPC]
