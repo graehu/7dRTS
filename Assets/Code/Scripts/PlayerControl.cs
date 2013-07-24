@@ -51,8 +51,13 @@ public class PlayerControl : MonoBehaviour {
 	{ 
 		get 
 		{ 
-			//return turnBuffer.Find(t => t.turnID >= GameManager.CurrentTurn + GameManager.TURN_BUFFER_SIZE) != null;
-			return turnBuffer.Count >= GameManager.TURN_BUFFER_SIZE;
+			//make sure we have the desired buffer
+			for(int i = 0; i < GameManager.TURN_BUFFER_SIZE; i++)
+			{
+				if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn + i) == null)
+					return false;
+			}
+			return true;
 		} 
 	}
 	
@@ -190,6 +195,8 @@ public class PlayerControl : MonoBehaviour {
 	{		
 		if(!enabled) return;
 		
+		Debug.Log(string.Format("Capturing Turn {0}", _turnID));
+		
 		//cache current snapshot and give it the appropriate turnID
 		ControlSnapShot s = snapShot.Clone();
 		s.turnID = _turnID;
@@ -204,6 +211,8 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void ProcessTurn(int _turnID)
 	{
+		Debug.Log(string.Format("Processing Turn {0}", _turnID));
+		
 		//get turn
 		ControlSnapShot s = turnBuffer.Find(t => t.turnID == _turnID);
 		turnBuffer.Remove(s);
@@ -232,8 +241,6 @@ public class PlayerControl : MonoBehaviour {
 			Fire(s.aimVector);
 			break;
 		}
-		
-		//Debug.Log(string.Format("Player {0}: {1}", GameManager.clientTeam, s.action));
 	}
 	
 	#endregion
@@ -255,6 +262,11 @@ public class PlayerControl : MonoBehaviour {
 			s.turnID = i;
 			turnBuffer.Add(s);
 		}
+		
+		if(networkView.owner == Network.player)
+			name = "me";
+		else
+			name = "them";
 	}
 	
 	void OnGUI ()
@@ -418,11 +430,13 @@ public class PlayerControl : MonoBehaviour {
 		
 		for(int i = 0; i < bufferCount; i++)
 		{
-			ControlSnapShot s = turnBuffer[i];
+			ControlSnapShot s = null;
 			
 			//if we're writing, get variables to write
 			if(stream.isWriting)
 			{
+				s = turnBuffer[i];
+				
 				turnID = s.turnID;
 				action = (int)s.action;
 				aimVector = s.aimVector;

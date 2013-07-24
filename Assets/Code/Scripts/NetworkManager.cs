@@ -105,6 +105,13 @@ public class NetworkManager : MonoBehaviour {
 		//Network.CloseConnection(); //use this to disconnect subsequent players
 	}
 	
+	void OnPlayerDisconnected(NetworkPlayer _player)
+	{
+		Debug.Log(string.Format("Player {0} left, cleaning up...", _player));
+		Network.RemoveRPCs(_player);
+		Network.DestroyPlayerObjects(_player);
+	}
+	
 	#endregion
 	
 	#region client callback
@@ -114,13 +121,14 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log("Connected To Server");
 		
 		connectingToServer = false;
-		
-		
 	}
 	
 	void OnDisconnectedFromServer(NetworkDisconnection info)
 	{
 		Debug.Log(info.ToString());
+		
+		//clear game here
+		Application.LoadLevel(Application.loadedLevel);
 	}
 	
 	void OnFailedToConnect(NetworkConnectionError error)
