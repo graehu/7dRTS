@@ -5,6 +5,12 @@ using System.Collections.Generic;
 public class PhysicsBody : MonoBehaviour {
 	
 	
+	#region public members
+	public float mass = 1f;
+	public float size = 1f;
+	#endregion
+	
+	
 	#region protected members
 	
 	protected State previous = new State();
@@ -67,8 +73,8 @@ public class PhysicsBody : MonoBehaviour {
 	// Use this for initialization
 	void Awake ()
 	{
-		current.size = 1;
-		current.mass = 1;
+		current.size = size;
+		current.mass = mass;
 		current.inverseMass = 1.0f / current.mass;
 		current.position = transform.position;
 		current.momentum = Vector2.zero;
@@ -82,6 +88,8 @@ public class PhysicsBody : MonoBehaviour {
 	public void Update ()
 	{
 		time += Time.deltaTime;
+		current.size = size;
+		current.mass = mass;
 		previous = current;
 		integrate(current, time, Time.deltaTime);
 		transform.position = new Vector3(current.position.x, current.position.y, transform.position.z);
@@ -181,7 +189,7 @@ Derivative evaluate(State _state, float t, float dt, Derivative _derivative)
 void forces(State _state, float t, ref Vector2 force, ref Vector2 torque)
 {
 	// attract towards origin
-	force.y = -(9.8f/2f);// * _state.position.j;
+	force.y = -((9.8f)*mass);// * _state.position.j;
 
 	for(int i = 0; i < activeForces.Count; i++)
 		force = force + activeForces[i];//*/

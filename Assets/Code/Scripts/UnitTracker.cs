@@ -5,6 +5,7 @@ public class UnitTracker : MonoBehaviour {
 	
 	public int unitID = 0;
 	public int teamID = 0;
+	public GameObject aimingReticle = null;
 	
 	public AIPathXY AI = null;
 	

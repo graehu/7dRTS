@@ -106,25 +106,14 @@ public class PlayerControl : MonoBehaviour {
 	{
 		foreach(UnitTracker unit in selectedUnits)
 		{
-			/*GameObject rocket = Resources.Load("Rocket") as GameObject;
-			GameObject instRocket = Instantiate(rocket) as GameObject;
-			PhysicsBody phyRocket = instRocket.GetComponent("PhysicsBody") as PhysicsBody;
-			//instRocket.transform.position = aimingUnit.transform.position;
-			phyRocket.Position = unit.transform.position;
-			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);
-			Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
-			*/
 			
 			GameObject rocket = Resources.Load("Rocket") as GameObject;
 			GameObject instRocket = Instantiate(rocket) as GameObject;
 			Rocket phyRocket = instRocket.GetComponent("Rocket") as Rocket;
-			//instRocket.transform.position = aimingUnit.transform.position;
 			phyRocket.Position = unit.transform.position;
+			float powerScale = aimVector.magnitude/maxAimingDistance;
 			
-			if(aimVector.magnitude > phyRocket.firePower)
-			{
-				aimVector = aimVector.normalized*phyRocket.firePower;	
-			}
+			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);	
 			
 			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);
 			Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
@@ -133,6 +122,11 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void Aim(Vector2 _aimVector)
 	{
+		Vector2 dir = _aimVector;
+		Vector3 pos = aimingUnit.transform.position;
+		Vector3 endpoint = new Vector3(dir.x+pos.x, dir.y+pos.y, pos.z);
+		aimingUnit.aimingReticle.transform.position = endpoint;
+
 		snapShot.aimVector = _aimVector;
 	}
 	
@@ -320,6 +314,16 @@ public class PlayerControl : MonoBehaviour {
 			ControlSnapShot s = snapShot.Clone();
 			s.turnID = i;
 			turnBuffer.Add(s);
+		}
+	}
+	void OnDrawGizmos()
+	{
+		if(Input.GetMouseButton(1))
+		{
+			Vector2 dir = snapShot.aimVector;
+			Vector3 pos = aimingUnit.transform.position;
+			Vector3 endpoint = new Vector3(dir.x+pos.x, dir.y+pos.y, pos.z);
+			Gizmos.DrawLine(pos, endpoint);
 		}
 	}
 	
