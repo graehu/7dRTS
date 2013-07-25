@@ -7,13 +7,21 @@ public class NetworkManager : MonoBehaviour {
 	public enum NetworkState
 	{
 		Initialising,
-		Disconnected,
+		Lobby,
 		ServerInitialising,
 		ServerHosted,
-		ServerRunning,
+		ServerPlaying,
+		ClientSearching,
 		ClientConnecting,
-		ClientRunning
+		ClientPlaying,
+		Disconnected
 	}
+	
+	#region public variables
+	
+	public int listenPort = 25000;
+	
+	#endregion
 	
 	#region private variables
 	
@@ -22,37 +30,53 @@ public class NetworkManager : MonoBehaviour {
 	HostData server = null;
 	HostData [] availableHosts = new HostData[0];
 	
-	bool hostListRecieved = false;
-	NetworkState networkState = NetworkState.Disconnected;
+	NetworkState networkState = NetworkState.Initialising;
 
 	#endregion
 	
 	#region public methods
 	
-	public void StartServer(string gameName)
+	public void ReturnToLobby()
 	{
-		Network.InitializeServer(1, 25000, true);
+		networkState = NetworkState.Lobby;
+	}
+	
+	public void Disconnect()
+	{
+		if(networkState != NetworkState.Disconnected) //avoid recursion
+		{
+			networkState = NetworkState.Disconnected;
+			Network.Disconnect();
+			MasterServer.UnregisterHost();
+		}
+	}
+	
+	public void StartServer(string gameName)
+	{		
+		Network.InitializeServer(1, listenPort, !Network.HavePublicAddress());
 		
 		networkState = NetworkState.ServerInitialising;
 	}
 	
-	public void FindServer()
+	public void ConnectToServer(HostData _server)
 	{
-		availableHosts = MasterServer.PollHostList();
-				
-		if( availableHosts.Length > 0)
-		{
-			server = availableHosts[0];
+		server = _server;
+		
+		Network.Connect(server);
 			
-			//try to connect to the first host
-			Network.Connect(server.guid);
-			
-			MasterServer.ClearHostList();
-			
-			networkState = NetworkState.ClientConnecting;
-			
-			Debug.Log("Connecting To Server: " + server.gameName);
-		}
+		MasterServer.ClearHostList();
+		
+		networkState = NetworkState.ClientConnecting;
+		
+		Debug.Log("Connecting To Server: " + server.gameName);
+	}
+	
+	public void RequestHostList()
+	{
+		MasterServer.ClearHostList();
+		MasterServer.RequestHostList(gameType);
+		
+		Debug.Log ("Requesting host list for " + gameType);
 	}
 	
 	#endregion
@@ -61,33 +85,31 @@ public class NetworkManager : MonoBehaviour {
 	
 	void Start()
  	{
+		Application.runInBackground = true;
+		
+		RequestHostList();
+		
 		//Requesting host list
 		Debug.Log ("Requesting host list for " + gameType);
-		MasterServer.ClearHostList();
-		MasterServer.RequestHostList(gameType);
 	 }
 	
 	void OnDestroy()
 	{
-		MasterServer.UnregisterHost();
-		Network.Disconnect();
+		Disconnect();
 	}
 	
 	void OnGUI()
-	{
-		bool reset = false;
-		
-		GUILayout.BeginVertical("Box");
+	{				
+		GUILayout.BeginVertical("box");
 		
 		GUILayout.Label(networkState.ToString());
 		
 		switch(networkState)
 		{
 		case NetworkState.Initialising:
-			if(hostListRecieved)
-				networkState = NetworkState.Disconnected;
+			networkState = NetworkState.Lobby;
 			break;
-		case NetworkState.Disconnected:
+		case NetworkState.Lobby:
 			
 			GUILayout.BeginHorizontal();
 			
@@ -105,47 +127,79 @@ public class NetworkManager : MonoBehaviour {
 			
 			GUILayout.EndHorizontal();
 			
-			GUILayout.BeginHorizontal();
+			if(GUILayout.Button("Update Hosts"))
+			{
+				RequestHostList();
+			}
 			
-				if(GUILayout.Button("Join Game"))
-					FindServer();
+			GUILayout.Label("-hosts-");
+			
+			foreach(HostData host in availableHosts)
+			{
+				if(GUILayout.Button(string.Format("{0} ({1}/{2})", host.gameName, host.connectedPlayers, host.playerLimit)))
+				{
+					ConnectToServer(host);
+				}
+			}
 				
-				GUILayout.Label("Hosts: " + availableHosts.Length);
-			
-			GUILayout.EndHorizontal();
+			GUILayout.Label("-------");
 			
 			break;
 		case NetworkState.ServerInitialising:
+			
+			if(GUILayout.Button("Stop"))
+				Disconnect();
+			
 			break;
 		case NetworkState.ServerHosted:
+			
 			if(GUILayout.Button("Stop"))
-				reset = true;
+				Disconnect();
+			
+			GUILayout.Label(string.Format("({0}/{1}) Players", Network.connections.Length+1, Network.maxConnections+1));
+			
 			break;
-		case NetworkState.ServerRunning:
-			GUILayout.Label("Game: " + gameName);
-			if(GUILayout.Button("End Game"))
-				reset = true;
+			
+		case NetworkState.ClientSearching:
+			
+			if(availableHosts.Length > 0)
+			{
+				//try to connect to the first host
+				ConnectToServer(availableHosts[0]);
+			}
+			else
+				RequestHostList();
+			
+			if(GUILayout.Button("Stop"))
+				Disconnect();
+			
 			break;
 		case NetworkState.ClientConnecting:
+			
 			if(GUILayout.Button("Stop"))
-				reset = true;
+				Disconnect();
+			
 			break;
-		case NetworkState.ClientRunning:
-			GUILayout.Label("Game: " + server.gameName);
+		case NetworkState.ClientPlaying:
+		case NetworkState.ServerPlaying:
+			
+			GUILayout.Label("Game: " + gameName);
+			
 			if(GUILayout.Button("End Game"))
-				reset = true;
+				Disconnect();
+			
+			GUILayout.Label("PlayerID: " + Network.player.ToString());
+			
+			break;
+		case NetworkState.Disconnected:
+			
+			if(GUILayout.Button("Return To Lobby"))
+				Application.LoadLevel(Application.loadedLevel);
+			
 			break;
 		}
-		
-		GUILayout.Label("Connections: " + Network.connections.Length);
 		
 		GUILayout.EndVertical();	
-		
-		if(reset)
-		{
-			Application.LoadLevel(Application.loadedLevel);
-			//does disconections on destroy, this should be done here if this object is perminant
-		}
 		
 	}
 	
@@ -165,6 +219,7 @@ public class NetworkManager : MonoBehaviour {
 	void OnPlayerConnected(NetworkPlayer _player)
 	{
 		Debug.Log("Client Connected: " + _player.guid);
+		networkState = NetworkState.Playing;
 	}
 	
 	void OnPlayerDisconnected(NetworkPlayer _player)
@@ -172,6 +227,8 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log(string.Format("Player {0} left, cleaning up...", _player));
 		Network.RemoveRPCs(_player);
 		Network.DestroyPlayerObjects(_player);
+		
+		Disconnect();
 	}
 	
 	#endregion
@@ -181,20 +238,20 @@ public class NetworkManager : MonoBehaviour {
 	void OnConnectedToServer()
 	{
 		Debug.Log("Connected To Server");
-		networkState = NetworkState.ClientRunning;
+		networkState = NetworkState.Playing;
 	}
 	
 	void OnDisconnectedFromServer(NetworkDisconnection info)
 	{
 		Debug.Log(info.ToString());
+		Disconnect();
 	}
 	
 	void OnFailedToConnect(NetworkConnectionError error)
 	{
 		//TODO: do something with error
-		Debug.Log("Connection Error: " + error.ToString());
-		
-		networkState = NetworkState.Disconnected;
+		Debug.Log(error.ToString());
+		Disconnect();
 	}
 	
 	#endregion
@@ -208,7 +265,8 @@ public class NetworkManager : MonoBehaviour {
 		switch(_event)
 		{
 		case MasterServerEvent.HostListReceived:
-			hostListRecieved = true;
+			availableHosts = MasterServer.PollHostList();
+			MasterServer.ClearHostList();
 			break;
 		case MasterServerEvent.RegistrationSucceeded:
 			networkState = NetworkState.ServerHosted;

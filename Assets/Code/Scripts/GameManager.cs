@@ -11,8 +11,6 @@ public class GameManager : MonoBehaviour
 	
 	public static int CurrentTurn { get { return instance.currentTurn; } }
 	
-	public static int localTeam = 0;
-		
 	private static Dictionary<int,List<UnitTracker>> teams = new Dictionary<int, List<UnitTracker>>();
 	
 	#endregion
@@ -149,27 +147,10 @@ public class GameManager : MonoBehaviour
 	{
 		if(Network.connections.Length == maxConnections)
 		{
-			InitialiseGame(0, new NetworkMessageInfo());
-			for(int i = 1; i < Network.connections.Length; i++)
-			{
-				int teamID = i;
-				networkView.RPC("InitialiseGame", Network.connections[i], teamID);
-			}
 			networkView.RPC("BeginGame", RPCMode.All);
 			
 			MasterServer.UnregisterHost();
 		}
-	}
-	
-	void OnPlayerDisconnected(NetworkPlayer _player)
-	{
-		Application.LoadLevel(Application.loadedLevel);
-	}
-	
-	[RPC]
-	void InitialiseGame(int _teamID, NetworkMessageInfo _info)
-	{
-		localTeam = _teamID;
 	}
 	
 	[RPC]
@@ -191,8 +172,6 @@ public class GameManager : MonoBehaviour
 		
 		lastTurnTimestamp = (float)Time.time;
 		isRunning = true;
-		
-		localTeam = 0;
 	}
 	
 	#endregion

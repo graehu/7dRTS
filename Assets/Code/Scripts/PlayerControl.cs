@@ -63,6 +63,8 @@ public class PlayerControl : MonoBehaviour {
 		} 
 	}
 	
+	public int Index { get { return int.Parse(networkView.owner.ToString()); } }
+	
 	#endregion
 	
 	#region public variables
@@ -138,7 +140,7 @@ public class PlayerControl : MonoBehaviour {
 		Rect area = Rect.MinMaxRect(Mathf.Min(p1.x,p2.x), Mathf.Min(p1.y,p2.y), 
 									Mathf.Max(p1.x,p2.x), Mathf.Max(p1.y,p2.y));
 		
-		List<UnitTracker> team = GameManager.GetTeam(GameManager.localTeam);
+		List<UnitTracker> team = GameManager.GetTeam(Index);
 		for(int i = 0; i < team.Count; i++)
 		{
 			Vector2 pos = team[i].transform.position;
@@ -155,7 +157,10 @@ public class PlayerControl : MonoBehaviour {
 	public void Select(UnitTracker _unit)
 	{
 		//debug
-		_unit.GetComponentInChildren<Renderer>().material.color = Color.red;
+		if(Index == 0)
+			_unit.GetComponentInChildren<Renderer>().material.color = Color.red;
+		else
+			_unit.GetComponentInChildren<Renderer>().material.color = Color.green;
 		
 		//select
 		selectedUnits.Add(_unit);
@@ -187,7 +192,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	public UnitTracker GetUnitAtPosition(Vector3 _pos)
 	{
-		List<UnitTracker> units = GameManager.GetTeam(GameManager.localTeam);
+		List<UnitTracker> units = GameManager.GetTeam(Index);
 		
 		foreach(UnitTracker unit in units)
 		{
