@@ -5,7 +5,7 @@ public class GameManager : MonoBehaviour
 {
 	#region static variables
 	
-	public const int TURN_BUFFER_SIZE = 1;
+	public const int TURN_BUFFER_SIZE = 2;
 	
 	private static GameManager instance = null;
 	
@@ -95,31 +95,33 @@ public class GameManager : MonoBehaviour
 	
 	void LateUpdate()
 	{
+		float time = localGame ? Time.time : (float)Network.time;
+		float turnLength = 1f / (Network.sendRate);
+		
 		if(isRunning)
-		{
-			float time = localGame ? Time.time : (float)Network.time;
-			
-			turnTick += time - lastTurnTimestamp;
-			lastTurnTimestamp = time;
-			
-			float turnLength = 1f / Network.sendRate;
-			if(turnTick > turnLength)
+		{			
+			if(turnTick < turnLength)
+			{
+				turnTick += time - lastTurnTimestamp;
+			}
+			else
 			{
 				//TODO: validate number of player controls matches number of players
 				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
 				
 				Time.timeScale = 1;
+					
+				localPlayerControl.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
 				
 				foreach(PlayerControl p in players)
-				{							
+				{		
 					if(!p.IsUpToDate)
 					{
 						//pause simulation
 						Time.timeScale = 0;
+						Debug.Log("Pause");
 						return;
 					}
-					
-					p.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
 				}
 				
 				foreach(PlayerControl p in players)
@@ -127,11 +129,12 @@ public class GameManager : MonoBehaviour
 					p.ProcessTurn(currentTurn);
 				}
 				
-				turnTick = 0;
+				turnTick = turnTick - turnLength;
 				
 				currentTurn++; //increment turn
 			}
 		}
+		lastTurnTimestamp = time;
 	}
 	
 	#endregion

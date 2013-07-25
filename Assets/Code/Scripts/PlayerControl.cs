@@ -53,13 +53,19 @@ public class PlayerControl : MonoBehaviour {
 	{ 
 		get 
 		{ 
+			/*
 			//make sure we have the desired buffer
 			for(int i = 0; i < GameManager.TURN_BUFFER_SIZE; i++)
 			{
-				if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn + i) == null)
-					return false;
+				if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn + i) != null)
+					return true;
 			}
-			return true;
+			return false;
+			*/
+			if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn) != null)
+				return true;
+			else
+				return false;
 		} 
 	}
 	
@@ -182,7 +188,7 @@ public class PlayerControl : MonoBehaviour {
 	{
 		for(int i = 0; i < selectedUnits.Count; i++)
 		{
-			AIPathXY aiPath = selectedUnits[i].GetComponent<AIPathXY>();
+			AIPathXY aiPath = selectedUnits[i].AI;
 			if(aiPath != null)
 			{
 				aiPath.SendMessageUpwards("MoveTo", _pos);;
@@ -212,7 +218,7 @@ public class PlayerControl : MonoBehaviour {
 	{		
 		if(!enabled) return;
 		
-		Debug.Log(string.Format("Capturing Turn {0}", _turnID));
+		//Debug.Log(string.Format("Capturing Turn {0}", _turnID));
 		
 		//cache current snapshot and give it the appropriate turnID
 		ControlSnapShot s = snapShot.Clone();
@@ -228,7 +234,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void ProcessTurn(int _turnID)
 	{
-		Debug.Log(string.Format("Processing Turn {0}", _turnID));
+		//Debug.Log(string.Format("Processing Turn {0}", _turnID));
 		
 		//temp variables
 		RaycastHit hitInfo = new RaycastHit();
@@ -384,22 +390,16 @@ public class PlayerControl : MonoBehaviour {
 				lastMouseDownPos = Input.mousePosition;
 				snapShot.worldMouseDown = GetWorldMousePosition();
 				
-				switch(selectState)
+				UnitTracker unit = GetUnitAtPosition(snapShot.worldMouseDown);
+				
+				if(unit != null && selectedUnits.Contains(unit))
 				{
-				case SelectionState.Selected:
-			
-					UnitTracker unit = GetUnitAtPosition(snapShot.worldMouseDown);
-					
-					if(unit != null && selectedUnits.Contains(unit))
-					{
-						selectState = SelectionState.Aiming;
-						aimingUnit = unit;
-					}
-					else
-					{	
-						snapShot.action = ControlAction.MoveSelected;
-					}
-					break;
+					selectState = SelectionState.Aiming;
+					aimingUnit = unit;
+				}
+				else
+				{	
+					snapShot.action = ControlAction.MoveSelected;
 				}
 			}
 			else if(Input.GetMouseButtonUp(1))

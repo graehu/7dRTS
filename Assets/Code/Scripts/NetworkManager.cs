@@ -188,7 +188,12 @@ public class NetworkManager : MonoBehaviour {
 			if(GUILayout.Button("End Game"))
 				Disconnect();
 			
-			GUILayout.Label("PlayerID: " + Network.player.ToString());
+			GUILayout.Label("PlayerID: " + Network.player);
+			
+			foreach(NetworkPlayer player in Network.connections)
+			{
+				GUILayout.Label(string.Format("Player{0} {1}ms", player, Network.GetAveragePing(player)));
+			}
 			
 			break;
 		case NetworkState.Disconnected:
