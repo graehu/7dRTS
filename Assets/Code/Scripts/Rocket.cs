@@ -3,18 +3,17 @@ using System.Collections;
 
 public class Rocket : PhysicsBody {
 	
-	public float firePower = 5f;
-	public float thrust = 1; //the power of the thruster.
-	public float fuelDuration = 1; //how long the fuel lasts in seconds./
-	float tick = 0;
-	
-	//TODO: Probably not needed, remove after testing.
-	/*Rocket(Vector2 initialDirection)
-	{
-		ApplyForce(initialDirection, ForceMode.Impulse);
-	}*/
+	#region public members
+	public float firePower = 5f; 	// the inital power of the shot.
+	public float maxThrust = 1f; 	// the power of the thruster with full fuel.
+	public float minThrust = 0f; 	// the power of the thruster once the fuel runs out.
+	public float fuelDuration = 1f; // how long the fuel lasts in seconds.
+	#endregion
 	
 	
+	#region private members
+	float fuelTick = 0;
+	#endregion
 
 	// Use this for initialization
 	void Start ()
@@ -27,9 +26,10 @@ public class Rocket : PhysicsBody {
 	{
 		//This force needs to scale.
 		float actualThrust = 0;
-		if(tick < fuelDuration)
+		fuelTick += Time.deltaTime;
+		if(fuelTick < fuelDuration)
 		{
-			actualThrust = Mathf.Lerp(thrust, 0, t/fuelDuration);
+			actualThrust = Mathf.Lerp(maxThrust, minThrust, fuelTick/fuelDuration);
 			ApplyForce(actualThrust*current.velocity.normalized, ForceMode.Force);
 		}
 		base.Update();

@@ -10,11 +10,14 @@ public class PhysicsBody : MonoBehaviour {
 	protected State previous = new State();
   	protected State current = new State();
 	protected List<Vector2> activeForces = new List<Vector2>();
-	protected float t = 0f;
+
 	//TODO: remove this after testing.
 	public Vector2 velo = Vector2.zero;
 
 	
+	#endregion
+	#region private members
+	private float time = 0f;
 	#endregion
 	
 	#region public properties
@@ -78,9 +81,9 @@ public class PhysicsBody : MonoBehaviour {
 	// Update is called once per frame
 	public void Update ()
 	{
-		t += Time.deltaTime;
+		time += Time.deltaTime;
 		previous = current;
-		integrate(current, t, Time.deltaTime);
+		integrate(current, time, Time.deltaTime);
 		transform.position = new Vector3(current.position.x, current.position.y, transform.position.z);
 		//m_forces.clear();
 		//if physics are 2d. do this:
