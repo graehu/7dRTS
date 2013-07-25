@@ -4,6 +4,21 @@ using System.Collections.Generic;
 
 public class PhysicsBody : MonoBehaviour {
 	
+	
+	#region protected members
+	
+	protected State previous = new State();
+  	protected State current = new State();
+	protected List<Vector2> activeForces = new List<Vector2>();
+	protected float t = 0f;
+	//TODO: remove this after testing.
+	public Vector2 velo = Vector2.zero;
+
+	
+	#endregion
+	
+	#region public properties
+	
 	public Vector2 Position
 	{
 		get {return current.position;}
@@ -15,19 +30,36 @@ public class PhysicsBody : MonoBehaviour {
 		set {current.velocity = value;}
 	}
 	
-	State previous = new State();
-    State current = new State();
-	public Vector2 velo = Vector2.zero;
-	List<Vector2> activeForces = new List<Vector2>();
+	#endregion
 	
-	public void ApplyForce(Vector2 force)
+	
+	
+	/// <summary>
+	/// Applies an impulsive force.
+	/// </summary>
+	/// <param name='force'>
+	/// Force.
+	/// </param>
+	
+	public void ApplyForce(Vector2 force, ForceMode mode)
 	{
 		//current.momentum = current.mass*force;
 		//previous.momentum = force;
-		activeForces.Add(force);
-		current.momentum = force;
+		switch(mode)
+		{
+		case ForceMode.Impulse:
+			activeForces.Add(force);
+			current.momentum = force;
+			break;
+		case ForceMode.Force:
+			activeForces.Add(force);	
+			break;
+		default:
+			Debug.Log("Unsupported ForceMode");
+			break;
+		}
 	}
-	float t = 0f;
+
 
 	// Use this for initialization
 	void Awake ()
@@ -44,7 +76,7 @@ public class PhysicsBody : MonoBehaviour {
 		previous = current;
 	}
 	// Update is called once per frame
-	void Update ()
+	public void Update ()
 	{
 		t += Time.deltaTime;
 		previous = current;
@@ -56,7 +88,7 @@ public class PhysicsBody : MonoBehaviour {
 		current.orientation.y = 0;
 	}
 		
-	class State
+	protected class State
 	{
 	    /// primary physics state
 	    public Vector2 position = Vector2.zero;            ///< the position of the cube center of mass in world coordinates (meters).
@@ -78,6 +110,8 @@ public class PhysicsBody : MonoBehaviour {
 		
 		public void recalculate()
 	    {
+			
+			//TODO: add a quaternion "Normalising" function to make this recalc orientations properly.
 	        velocity = momentum * inverseMass;
 	        angularVelocity = angularMomentum * inverseInertiaTensor;
 	        //orientation.normalise();
@@ -144,7 +178,7 @@ Derivative evaluate(State _state, float t, float dt, Derivative _derivative)
 void forces(State _state, float t, ref Vector2 force, ref Vector2 torque)
 {
 	// attract towards origin
-	force.y = -(9.8f/2);// * _state.position.j;
+	force.y = -(9.8f/2f);// * _state.position.j;
 
 	for(int i = 0; i < activeForces.Count; i++)
 		force = force + activeForces[i];//*/
