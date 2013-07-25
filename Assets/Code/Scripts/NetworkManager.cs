@@ -219,7 +219,7 @@ public class NetworkManager : MonoBehaviour {
 	void OnPlayerConnected(NetworkPlayer _player)
 	{
 		Debug.Log("Client Connected: " + _player.guid);
-		networkState = NetworkState.Playing;
+		networkState = NetworkState.ServerPlaying;
 	}
 	
 	void OnPlayerDisconnected(NetworkPlayer _player)
@@ -238,7 +238,7 @@ public class NetworkManager : MonoBehaviour {
 	void OnConnectedToServer()
 	{
 		Debug.Log("Connected To Server");
-		networkState = NetworkState.Playing;
+		networkState = NetworkState.ClientPlaying;
 	}
 	
 	void OnDisconnectedFromServer(NetworkDisconnection info)
