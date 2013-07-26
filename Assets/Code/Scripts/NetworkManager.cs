@@ -2,63 +2,79 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
+public enum NetworkState
+{
+	NetworkUninitialised,
+	NetworkInitialising,
+	ServerInitialising,
+	ServerHosted,
+	ServerPlaying,
+	ClientSearching,
+	ClientConnecting,
+	ClientPlaying,
+	Disconnected
+}
+
 public class NetworkManager : MonoBehaviour {
 	
-	public enum NetworkState
-	{
-		Initialising,
-		Lobby,
-		ServerInitialising,
-		ServerHosted,
-		ServerPlaying,
-		ClientSearching,
-		ClientConnecting,
-		ClientPlaying,
-		Disconnected
-	}
+	#region public types
+	
+	#endregion
 	
 	#region public variables
 	
-	public int listenPort = 25000;
+	public static NetworkState State { get { return networkState; } }
+	public static HostData [] AvailableHosts { get { return availableHosts; } }
 	
 	#endregion
 	
 	#region private variables
 	
-	string gameType = "7dRTS_TooEasyGames";
-	string gameName = "GameName";
-	HostData server = null;
-	HostData [] availableHosts = new HostData[0];
+	static NetworkManager instance = null;
 	
-	NetworkState networkState = NetworkState.Initialising;
+	static int listenPort = 25000;
+	static HostData server = null;
+	static string serverName = "TestServer";
+	static string serverGameType = "TestGameType";
+	static HostData [] availableHosts = new HostData[0];
+	
+	static NetworkState networkState = NetworkState.NetworkUninitialised;
 
 	#endregion
 	
 	#region public methods
 	
-	public void ReturnToLobby()
+	public static void Initialise()
 	{
-		networkState = NetworkState.Lobby;
+		if(instance == null)
+		{
+			networkState = NetworkState.NetworkInitialising;
+			GameObject gobj = new GameObject("_NetworkManager", typeof(NetworkManager));
+			instance = gobj.GetComponent<NetworkManager>();
+		}
 	}
 	
-	public void Disconnect()
+	public static void Disconnect()
 	{
 		if(networkState != NetworkState.Disconnected) //avoid recursion
 		{
 			networkState = NetworkState.Disconnected;
-			Network.Disconnect();
+			Network.Disconnect(200);
 			MasterServer.UnregisterHost();
 		}
 	}
 	
-	public void StartServer(string gameName)
+	public static void StartServer(string _gameName, string _gameType)
 	{		
+		serverName = _gameName;
+		serverGameType = _gameType;
+		
 		Network.InitializeServer(1, listenPort, !Network.HavePublicAddress());
 		
 		networkState = NetworkState.ServerInitialising;
 	}
 	
-	public void ConnectToServer(HostData _server)
+	public static void ConnectToServer(HostData _server)
 	{
 		server = _server;
 		
@@ -71,12 +87,12 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log("Connecting To Server: " + server.gameName);
 	}
 	
-	public void RequestHostList()
+	public static void RequestHostList(string _gameType)
 	{
 		MasterServer.ClearHostList();
-		MasterServer.RequestHostList(gameType);
+		MasterServer.RequestHostList(_gameType);
 		
-		Debug.Log ("Requesting host list for " + gameType);
+		Debug.Log ("Requesting host list for " + _gameType);
 	}
 	
 	#endregion
@@ -87,125 +103,14 @@ public class NetworkManager : MonoBehaviour {
  	{
 		Application.runInBackground = true;
 		
-		RequestHostList();
+		DontDestroyOnLoad(gameObject);
 		
-		//Requesting host list
-		Debug.Log ("Requesting host list for " + gameType);
+		networkState = NetworkState.Disconnected;
 	 }
 	
 	void OnDestroy()
 	{
 		Disconnect();
-	}
-	
-	void OnGUI()
-	{				
-		GUILayout.BeginVertical("box");
-		
-		GUILayout.Label(networkState.ToString());
-		
-		switch(networkState)
-		{
-		case NetworkState.Initialising:
-			networkState = NetworkState.Lobby;
-			break;
-		case NetworkState.Lobby:
-			
-			GUILayout.BeginHorizontal();
-			
-				if(GUILayout.Button("Create Game"))
-					StartServer(gameName);
-				
-				gameName = GUILayout.TextField(gameName, GUILayout.MaxWidth(100));
-			
-			GUILayout.EndHorizontal();
-			
-			GUILayout.BeginHorizontal();
-		
-				GUILayout.Label("Game Type:");
-				gameType = GUILayout.TextField(gameType, GUILayout.MaxWidth(100));
-			
-			GUILayout.EndHorizontal();
-			
-			if(GUILayout.Button("Update Hosts"))
-			{
-				RequestHostList();
-			}
-			
-			GUILayout.Label("-hosts-");
-			
-			foreach(HostData host in availableHosts)
-			{
-				if(GUILayout.Button(string.Format("{0} ({1}/{2})", host.gameName, host.connectedPlayers, host.playerLimit)))
-				{
-					ConnectToServer(host);
-				}
-			}
-				
-			GUILayout.Label("-------");
-			
-			break;
-		case NetworkState.ServerInitialising:
-			
-			if(GUILayout.Button("Stop"))
-				Disconnect();
-			
-			break;
-		case NetworkState.ServerHosted:
-			
-			if(GUILayout.Button("Stop"))
-				Disconnect();
-			
-			GUILayout.Label(string.Format("({0}/{1}) Players", Network.connections.Length+1, Network.maxConnections+1));
-			
-			break;
-			
-		case NetworkState.ClientSearching:
-			
-			if(availableHosts.Length > 0)
-			{
-				//try to connect to the first host
-				ConnectToServer(availableHosts[0]);
-			}
-			else
-				RequestHostList();
-			
-			if(GUILayout.Button("Stop"))
-				Disconnect();
-			
-			break;
-		case NetworkState.ClientConnecting:
-			
-			if(GUILayout.Button("Stop"))
-				Disconnect();
-			
-			break;
-		case NetworkState.ClientPlaying:
-		case NetworkState.ServerPlaying:
-			
-			GUILayout.Label("Game: " + gameName);
-			
-			if(GUILayout.Button("End Game"))
-				Disconnect();
-			
-			GUILayout.Label("PlayerID: " + Network.player);
-			
-			foreach(NetworkPlayer player in Network.connections)
-			{
-				GUILayout.Label(string.Format("Player{0} {1}ms", player, Network.GetAveragePing(player)));
-			}
-			
-			break;
-		case NetworkState.Disconnected:
-			
-			if(GUILayout.Button("Return To Lobby"))
-				Application.LoadLevel(Application.loadedLevel);
-			
-			break;
-		}
-		
-		GUILayout.EndVertical();	
-		
 	}
 	
 	#endregion
@@ -216,9 +121,9 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log("Server Initialised");
 		
-		Debug.Log("Registering Game: " + gameName);
+		Debug.Log("Registering Game: " + serverName);
 		
-		MasterServer.RegisterHost(gameType, gameName);
+		MasterServer.RegisterHost(serverGameType, serverName);
 	}
 	
 	void OnPlayerConnected(NetworkPlayer _player)
@@ -231,7 +136,7 @@ public class NetworkManager : MonoBehaviour {
 	{
 		Debug.Log(string.Format("Player {0} left, cleaning up...", _player));
 		Network.RemoveRPCs(_player);
-		Network.DestroyPlayerObjects(_player);
+		//Network.DestroyPlayerObjects(_player);
 		
 		Disconnect();
 	}

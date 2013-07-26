@@ -7,6 +7,7 @@ public class GameManager : MonoBehaviour
 	
 	public const int TURN_BUFFER_SIZE = 2;
 	
+	public static GameManager Instance { get { return instance; } }
 	private static GameManager instance = null;
 	
 	public static int CurrentTurn { get { return instance.currentTurn; } }
@@ -59,6 +60,9 @@ public class GameManager : MonoBehaviour
 	
 	#region public variables
 	
+	public string gameType = "7dRTS_TooEasyGames";
+	public string gameName = "GameName";
+	
 	public PlayerControl playerContolPrefab = null;
 	
 	public bool localGame = false;
@@ -91,6 +95,11 @@ public class GameManager : MonoBehaviour
 		
 		if(localGame)
 			BeginLocalGame();
+		else
+		{
+			NetworkManager.Initialise();
+			NetworkManager.RequestHostList(gameType);
+		}
 	}
 	
 	void LateUpdate()
@@ -137,6 +146,118 @@ public class GameManager : MonoBehaviour
 		lastTurnTimestamp = time;
 	}
 	
+	void OnGUI()
+	{				
+		GUILayout.BeginVertical("box");
+		
+		GUILayout.Label(NetworkManager.State.ToString());
+		
+		switch(NetworkManager.State)
+		{
+		case NetworkState.Disconnected:
+			
+			if(isRunning)
+			{
+				GUILayout.Label("Connection Lost");
+				if(GUILayout.Button("Reset"))
+				{
+					Application.LoadLevel(Application.loadedLevel);
+				}
+			}
+			else
+			{
+				GUILayout.BeginHorizontal();
+				
+					if(GUILayout.Button("Create Game"))
+						NetworkManager.StartServer(gameName, gameType);
+					
+					gameName = GUILayout.TextField(gameName, GUILayout.MaxWidth(100));
+				
+				GUILayout.EndHorizontal();
+				
+				GUILayout.BeginHorizontal();
+			
+					GUILayout.Label("Game Type:");
+					gameType = GUILayout.TextField(gameType, GUILayout.MaxWidth(100));
+				
+				GUILayout.EndHorizontal();
+				
+				if(GUILayout.Button("Update Hosts"))
+				{
+					NetworkManager.RequestHostList(gameType);
+				}
+				
+				GUILayout.Label("-hosts-");
+				
+				foreach(HostData host in NetworkManager.AvailableHosts)
+				{
+					if(GUILayout.Button(string.Format("{0} ({1}/{2})", host.gameName, host.connectedPlayers, host.playerLimit)))
+					{
+						NetworkManager.ConnectToServer(host);
+					}
+				}
+					
+				GUILayout.Label("-------");
+			}
+			
+			break;
+		case NetworkState.ServerInitialising:
+			
+			if(GUILayout.Button("Stop"))
+				NetworkManager.Disconnect();
+			
+			break;
+		case NetworkState.ServerHosted:
+			
+			if(GUILayout.Button("Stop"))
+				NetworkManager.Disconnect();
+			
+			GUILayout.Label(string.Format("({0}/{1}) Players", Network.connections.Length+1, Network.maxConnections+1));
+			
+			break;
+			
+		case NetworkState.ClientSearching:
+			
+			if(NetworkManager.AvailableHosts.Length > 0)
+			{
+				//try to connect to the first host
+				NetworkManager.ConnectToServer(NetworkManager.AvailableHosts[0]);
+			}
+			else
+				NetworkManager.RequestHostList(gameType);
+			
+			if(GUILayout.Button("Stop"))
+				NetworkManager.Disconnect();
+			
+			break;
+		case NetworkState.ClientConnecting:
+			
+			if(GUILayout.Button("Stop"))
+				NetworkManager.Disconnect();
+			
+			break;
+		case NetworkState.ClientPlaying:
+		case NetworkState.ServerPlaying:
+			
+			GUILayout.Label("Game: " + gameName);
+			
+			if(GUILayout.Button("End Game"))
+				NetworkManager.Disconnect();
+			
+			GUILayout.Label("PlayerID: " + Network.player);
+			
+			foreach(NetworkPlayer player in Network.connections)
+			{
+				GUILayout.Label(string.Format("Player{0} {1}ms", player, Network.GetAveragePing(player)));
+			}
+			
+			break;
+		}
+		
+		GUILayout.EndVertical();	
+		
+	}
+	
 	#endregion
 	
 	#region network callbacks
@@ -163,6 +284,16 @@ public class GameManager : MonoBehaviour
 		GameObject gobj = Network.Instantiate(playerContolPrefab.gameObject, Vector3.zero, Quaternion.identity, 0) as GameObject;
 		localPlayerControl = gobj.GetComponent<PlayerControl>();
 		
+		//spawn units
+		UnitSpawnPoint[] spawnPoints = (UnitSpawnPoint[]) FindSceneObjectsOfType(typeof(UnitSpawnPoint));
+		foreach(UnitSpawnPoint sp in spawnPoints)
+		{
+			if(sp.teamID == localPlayerControl.Index)
+			{
+				sp.SpawnNetworked();
+			}
+		}
+		
 		lastTurnTimestamp = (float)_info.timestamp;
 		isRunning = true;
 	}
@@ -172,6 +303,16 @@ public class GameManager : MonoBehaviour
 		//TODO: this should be done after the network level loading
 		GameObject gobj = Instantiate(playerContolPrefab.gameObject) as GameObject;
 		localPlayerControl = gobj.GetComponent<PlayerControl>();
+		
+		//spawn units
+		UnitSpawnPoint[] spawnPoints = (UnitSpawnPoint[]) FindSceneObjectsOfType(typeof(UnitSpawnPoint));
+		foreach(UnitSpawnPoint sp in spawnPoints)
+		{
+			if(sp.teamID == localPlayerControl.Index)
+			{
+				sp.SpawnLocal();
+			}
+		}
 		
 		lastTurnTimestamp = (float)Time.time;
 		isRunning = true;
