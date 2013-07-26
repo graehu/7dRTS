@@ -8,7 +8,7 @@ public class UnitSpawnPoint : MonoBehaviour
 	
 	public GameObject characterPrefab = null;
 	
-	public int teamID = 0;
+	public int playerID = 0;
 	
 	#endregion
 	
@@ -16,14 +16,16 @@ public class UnitSpawnPoint : MonoBehaviour
 	
 	public void SpawnNetworked()
 	{
-		GameObject obj = Network.Instantiate(characterPrefab, transform.position, transform.rotation, teamID) as GameObject;
+		GameObject obj = Network.Instantiate(characterPrefab, transform.position, transform.rotation, 0) as GameObject;
 		UnitTracker unit = obj.GetComponentInChildren<UnitTracker>();
+		unit.playerID = playerID;
 	}
 	
 	public void SpawnLocal()
 	{
 		GameObject obj = Instantiate(characterPrefab, transform.position, transform.rotation) as GameObject;
 		UnitTracker unit = obj.GetComponentInChildren<UnitTracker>();
+		unit.playerID = playerID;
 	}
 	
 	#endregion

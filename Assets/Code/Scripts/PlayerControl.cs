@@ -298,20 +298,8 @@ public class PlayerControl : MonoBehaviour {
 	#region monobehaviour methods
 	
 	// Use this for initialization
-	void Start () 
-	{
-		if(!string.IsNullOrEmpty(networkView.owner.ipAddress))
-		{
-			if(networkView.owner == Network.player)
-				name = "LocalPlayerContol";
-			else
-			{
-				name = "OtherPlayerControl";
-				this.enabled = false;
-				return;
-			}
-		}
-		
+	void Awake () 
+	{						
 		//warm buffer to desired size
 		turnBuffer.Clear();
 		snapShot = new ControlSnapShot();
@@ -471,6 +459,20 @@ public class PlayerControl : MonoBehaviour {
 	#endregion
 	
 	#region networking methods
+	
+	void OnNetworkInstantiate(NetworkMessageInfo info)
+	{
+		if(networkView.isMine)
+		{
+			name = "LocalPlayerContol";
+		}
+		else
+		{
+			name = "OtherPlayerControl";
+			this.enabled = false;
+			return;
+		}
+	}
 	
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
 	{

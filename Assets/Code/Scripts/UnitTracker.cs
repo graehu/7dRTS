@@ -9,7 +9,7 @@ public class UnitTracker : MonoBehaviour {
 	
 	public int health = 100;
 	
-	protected int playerID = 0;
+	public int playerID = 0;
 	protected bool isTracking = false;
 	
 	#region monobehaviour methods
@@ -17,11 +17,10 @@ public class UnitTracker : MonoBehaviour {
 	// Use this for initialization
 	void Start()
 	{
-		playerID = int.Parse ( networkView.owner.ToString () );
 		StartTracking();
 	}
 	
-	void OnDestroyed()
+	void OnDestroy()
 	{
 		StopTracking();
 	}

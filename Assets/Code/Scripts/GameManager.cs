@@ -93,13 +93,8 @@ public class GameManager : MonoBehaviour
 			Destroy(instance.gameObject);
 		instance = this;
 		
-		if(localGame)
-			BeginLocalGame();
-		else
-		{
-			NetworkManager.Initialise();
-			NetworkManager.RequestHostList(gameType);
-		}
+		NetworkManager.Initialise();
+		NetworkManager.RequestHostList(gameType);
 	}
 	
 	void LateUpdate()
@@ -108,7 +103,9 @@ public class GameManager : MonoBehaviour
 		float turnLength = 1f / (Network.sendRate);
 		
 		if(isRunning)
-		{			
+		{		
+			Time.timeScale = 1;
+			
 			if(turnTick < turnLength)
 			{
 				turnTick += time - lastTurnTimestamp;
@@ -117,8 +114,6 @@ public class GameManager : MonoBehaviour
 			{
 				//TODO: validate number of player controls matches number of players
 				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
-				
-				Time.timeScale = 1;
 					
 				localPlayerControl.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
 				
@@ -146,6 +141,12 @@ public class GameManager : MonoBehaviour
 				currentTurn++; //increment turn
 			}
 		}
+		else //not running
+		{
+			Time.timeScale = 0;
+			turnTick = 0;
+		}
+		
 		lastTurnTimestamp = time;
 	}
 	
@@ -161,7 +162,11 @@ public class GameManager : MonoBehaviour
 			
 			if(isRunning)
 			{
-				GUILayout.Label("Connection Lost");
+				if(localGame)
+					GUILayout.Label("Playing Offline");
+				else
+					GUILayout.Label("Connection Lost");
+				
 				if(GUILayout.Button("Reset"))
 				{
 					Application.LoadLevel(Application.loadedLevel);
@@ -201,6 +206,11 @@ public class GameManager : MonoBehaviour
 				}
 					
 				GUILayout.Label("-------");
+				
+				if(GUILayout.Button("Play Offline"))
+				{
+					BeginLocalGame();
+				}
 			}
 			
 			break;
@@ -291,7 +301,7 @@ public class GameManager : MonoBehaviour
 		UnitSpawnPoint[] spawnPoints = (UnitSpawnPoint[]) FindSceneObjectsOfType(typeof(UnitSpawnPoint));
 		foreach(UnitSpawnPoint sp in spawnPoints)
 		{
-			if(sp.teamID == localPlayerControl.Index)
+			if(sp.playerID == localPlayerControl.Index)
 			{
 				sp.SpawnNetworked();
 			}
@@ -299,6 +309,7 @@ public class GameManager : MonoBehaviour
 		
 		lastTurnTimestamp = (float)_info.timestamp;
 		isRunning = true;
+		localGame = false;
 	}
 	
 	void BeginLocalGame()
@@ -311,7 +322,7 @@ public class GameManager : MonoBehaviour
 		UnitSpawnPoint[] spawnPoints = (UnitSpawnPoint[]) FindSceneObjectsOfType(typeof(UnitSpawnPoint));
 		foreach(UnitSpawnPoint sp in spawnPoints)
 		{
-			if(sp.teamID == localPlayerControl.Index)
+			if(sp.playerID == 0)
 			{
 				sp.SpawnLocal();
 			}
@@ -319,6 +330,7 @@ public class GameManager : MonoBehaviour
 		
 		lastTurnTimestamp = (float)Time.time;
 		isRunning = true;
+		localGame = true;
 	}
 	
 	#endregion
