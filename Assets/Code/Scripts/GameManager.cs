@@ -264,6 +264,8 @@ public class GameManager : MonoBehaviour
 				GUILayout.Label(string.Format("Player{0} {1}ms", player, Network.GetAveragePing(player)));
 			}
 			
+			GUILayout.Label("Turn#: " + CurrentTurn);
+			
 			break;
 		}
 		

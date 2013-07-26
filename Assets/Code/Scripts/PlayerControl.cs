@@ -73,7 +73,7 @@ public class PlayerControl : MonoBehaviour {
 		} 
 	}
 	
-	public int Index { get { return int.Parse(networkView.owner.ToString()); } }
+	public int Index { get { return playerID; } }
 	
 	#endregion
 	
@@ -93,6 +93,8 @@ public class PlayerControl : MonoBehaviour {
 	#endregion
 	
 	#region protected variables
+	
+	protected int playerID = 0;
 	
 	protected ControlSnapShot snapShot = new ControlSnapShot();
 	protected List<ControlSnapShot> turnBuffer = new List<ControlSnapShot>();
@@ -233,7 +235,7 @@ public class PlayerControl : MonoBehaviour {
 	{		
 		if(!enabled) return;
 		
-		//Debug.Log(string.Format("Capturing Turn {0}", _turnID));
+		//Debug.Log(string.Format("Player {0} Capturing {1}", Index, _turnID));
 		
 		//cache current snapshot and give it the appropriate turnID
 		ControlSnapShot s = snapShot.Clone();
@@ -249,7 +251,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void ProcessTurn(int _turnID)
 	{
-		Debug.Log(string.Format("Processing Turn {0}", _turnID));
+		//Debug.Log(string.Format("Player {0} Processing {1}", Index, _turnID));
 		
 		//temp variables
 		RaycastHit hitInfo = new RaycastHit();
@@ -462,6 +464,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	void OnNetworkInstantiate(NetworkMessageInfo info)
 	{
+		playerID = int.Parse(networkView.owner.ToString());
 		if(networkView.isMine)
 		{
 			name = "LocalPlayerContol";
