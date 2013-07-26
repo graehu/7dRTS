@@ -132,11 +132,14 @@ public class GameManager : MonoBehaviour
 						return;
 					}
 				}
-				
-				foreach(PlayerControl p in players)
-				{
-					p.ProcessTurn(currentTurn);
-				}
+				//if(!GameManager.instance.localGame)
+				//{
+					foreach(PlayerControl p in players)
+					{
+						p.ProcessTurn(currentTurn);
+					}
+				//}
+				//else players[0].ProcessTurn(currentTurn);
 				
 				turnTick = turnTick - turnLength;
 				

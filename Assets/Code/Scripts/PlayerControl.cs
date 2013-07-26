@@ -62,6 +62,10 @@ public class PlayerControl : MonoBehaviour {
 			}
 			return false;
 			*/
+			
+			/*if(GameManager.Instance.localGame)
+				return true;*/
+			
 			if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn) != null)
 				return true;
 			else
@@ -125,6 +129,7 @@ public class PlayerControl : MonoBehaviour {
 		Vector2 dir = _aimVector;
 		Vector3 pos = aimingUnit.transform.position;
 		Vector3 endpoint = new Vector3(dir.x+pos.x, dir.y+pos.y, pos.z);
+		aimingUnit.aimingReticle.renderer.enabled = true;
 		aimingUnit.aimingReticle.transform.position = endpoint;
 
 		snapShot.aimVector = _aimVector;
@@ -200,8 +205,9 @@ public class PlayerControl : MonoBehaviour {
 			AIPathXY aiPath = selectedUnits[i].AI;
 			if(aiPath != null)
 			{
-				aiPath.SendMessageUpwards("MoveTo", _pos);;
+				aiPath.SendMessageUpwards("MoveTo", _pos);
 			}
+			selectedUnits[i].aimingReticle.renderer.enabled = false;
 		}
 	}
 	
@@ -243,7 +249,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void ProcessTurn(int _turnID)
 	{
-		//Debug.Log(string.Format("Processing Turn {0}", _turnID));
+		Debug.Log(string.Format("Processing Turn {0}", _turnID));
 		
 		//temp variables
 		RaycastHit hitInfo = new RaycastHit();
@@ -318,7 +324,7 @@ public class PlayerControl : MonoBehaviour {
 	}
 	void OnDrawGizmos()
 	{
-		if(Input.GetMouseButton(1))
+		if(Input.GetMouseButton(1) && aimingUnit != null)
 		{
 			Vector2 dir = snapShot.aimVector;
 			Vector3 pos = aimingUnit.transform.position;
