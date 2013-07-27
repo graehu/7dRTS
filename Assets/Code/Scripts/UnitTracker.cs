@@ -3,9 +3,13 @@ using System.Collections;
 
 public class UnitTracker : MonoBehaviour {
 	
+	public Vector3 UnitPos { get { return AI == null ? transform.position : AI.transform.position; } }
+	
 	public GameObject aimingReticle = null;
 	
 	public AIPathXY AI = null;
+	
+	public GameObject graphics = null;
 	
 	public int health = 100;
 	
@@ -25,14 +29,32 @@ public class UnitTracker : MonoBehaviour {
 		StopTracking();
 	}
 	
-	// Update is called once per frame
-	void LateUpdate () 
+	void Update()
 	{
-		if(AI != null)
+		if(health == 0)
 		{
-			transform.rotation = AI.transform.rotation;
-			transform.position = AI.transform.position;
+			StopTracking();
+			if(Network.peerType != NetworkPeerType.Disconnected)
+			{
+				if(networkView.isMine)
+				{
+					Network.RemoveRPCs(networkView.viewID);
+					Network.RemoveRPCs(transform.parent.networkView.viewID);
+					Network.Destroy(transform.parent.networkView.viewID);
+				}
+			}
+			else
+				Destroy(transform.parent.gameObject);
 		}
+	}
+	
+	#endregion
+	
+	#region private methods
+	
+	void OnDamage()
+	{
+		health = 0;
 	}
 	
 	#endregion
@@ -71,6 +93,8 @@ public class UnitTracker : MonoBehaviour {
 			playerID = ID;
 			health = hp;
 		}
+		
+		StartTracking();
 	}
 	
 	#endregion

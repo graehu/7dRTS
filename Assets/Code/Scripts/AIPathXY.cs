@@ -309,7 +309,7 @@ public class AIPathXY : MonoBehaviour {
 			dir /= magn;
 			int steps = (int)(magn/pickNextWaypointDist);
 			for (int i=0;i<steps;i++) {
-				CalculateVelocity (p1);
+				CalculateStep (p1, Time.deltaTime);
 				p1 += dir;
 			}
 		}
@@ -323,29 +323,27 @@ public class AIPathXY : MonoBehaviour {
 		return tr.position;
 	}
 	
-	public virtual void Update () {
+	
+	public void StepAlongPath(float _deltaTime)
+	{
+		Vector3 step = CalculateStep (GetFeetPosition(), _deltaTime);
 		
-		if (!canMove) { return; }
-		
-		Vector3 dir = CalculateVelocity (GetFeetPosition());
-		
-		//Rotate towards targetDirection (filled in by CalculateVelocity)
+		//Rotate to targetDirection (filled in by CalculateVelocity)
 		if (targetDirection != Vector3.zero) {
-			RotateTowards (targetDirection);
+			Vector3 euler = Quaternion.LookRotation (targetDirection).eulerAngles;
+			euler.x = 0;
+			euler.z = 0;
+			tr.rotation = Quaternion.Euler(euler);
 		}
 	
-		if (navController != null) {
-			navController.SimpleMove (GetFeetPosition(),dir);
-		} else if (controller != null) {
-			controller.Move (dir);
-		} else if (rigid != null) {
-			if(rigid.isKinematic)
-				rigid.MovePosition(rigid.position + dir*Time.deltaTime);
-			else
-				rigid.velocity = dir;
-		} else {
-			transform.Translate (dir*Time.deltaTime, Space.World);
-		}
+		transform.Translate (step, Space.World);
+	}
+	
+	public virtual void Update () 
+	{
+		if (!canMove) { return; }
+		
+		//StepAlongPath(Time.deltaTime);
 	}
 	
 	/** Point to where the AI is heading.
@@ -355,7 +353,7 @@ public class AIPathXY : MonoBehaviour {
 	 * Filled in by #CalculateVelocity */
 	protected Vector3 targetDirection;
 	
-	protected float XZSqrMagnitude (Vector3 a, Vector3 b) {
+	protected float XYSqrMagnitude (Vector3 a, Vector3 b) {
 		float dx = b.x-a.x;
 		float dz = b.y-a.y;
 		return dx*dx + dz*dz;
@@ -373,7 +371,7 @@ public class AIPathXY : MonoBehaviour {
 	 * /see targetDirection
 	 * /see currentWaypointIndex
 	 */
-	protected Vector3 CalculateVelocity (Vector3 currentPosition) {
+	protected Vector3 CalculateStep (Vector3 currentPosition, float deltaTime) {
 		if (path == null || path.vectorPath == null || path.vectorPath.Count == 0) return Vector3.zero; 
 		
 		List<Vector3> vPath = path.vectorPath;
@@ -390,7 +388,7 @@ public class AIPathXY : MonoBehaviour {
 		while (true) {
 			if (currentWaypointIndex < vPath.Count-1) {
 				//There is a "next path segment"
-				float dist = XZSqrMagnitude (vPath[currentWaypointIndex], currentPosition);
+				float dist = XYSqrMagnitude (vPath[currentWaypointIndex], currentPosition);
 					//Mathfx.DistancePointSegmentStrict (vPath[currentWaypointIndex+1],vPath[currentWaypointIndex+2],currentPosition);
 				if (dist < pickNextWaypointDist*pickNextWaypointDist) {
 					currentWaypointIndex++;
@@ -410,29 +408,24 @@ public class AIPathXY : MonoBehaviour {
 		
 		dir = targetPosition-currentPosition;
 		dir.z = 0;
-		float targetDist = dir.magnitude;
-		
-		float slowdown = Mathf.Clamp01 (targetDist / slowdownDistance);
 		
 		this.targetDirection = dir;
 		this.targetPoint = targetPosition;
 		
-		if (currentWaypointIndex == vPath.Count-1 && targetDist <= endReachedDistance) {
+		float targetDist = dir.magnitude;
+		
+		float slowdown = Mathf.Clamp01 (targetDist / slowdownDistance);
+		float sp = speed * slowdown;
+		float step = Mathf.Max(endReachedDistance, sp * deltaTime);
+		
+		if (currentWaypointIndex == vPath.Count-1 && targetDist <= step) {
 			if (!targetReached) { targetReached = true; OnTargetReached (); }
 			
 			//Send a move request, this ensures gravity is applied
 			return Vector3.zero;
-		}
+		}			
 		
-		Vector3 forward = tr.right;
-		float dot = Vector3.Dot (dir.normalized, forward);
-		float sp = speed /** Mathf.Max (dot,minMoveScale)*/ * slowdown;
-		
-		
-		if (Time.deltaTime	> 0) {
-			sp = Mathf.Clamp (sp,0,targetDist/(Time.deltaTime*2));
-		}
-		return dir.normalized*sp;
+		return dir.normalized*step;
 	}
 	
 	/** Rotates in the specified direction.

@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
 	
 	public static int CurrentTurn { get { return instance.currentTurn; } }
 	
-	private static Dictionary<int,List<UnitTracker>> teams = new Dictionary<int, List<UnitTracker>>();
+	private static List<UnitTracker> units = new List<UnitTracker>();
 	
 	#endregion
 	
@@ -20,23 +20,18 @@ public class GameManager : MonoBehaviour
 	
 	public static void AddUnit(int _teamID, UnitTracker _unit)
 	{
-		if(!teams.ContainsKey(_teamID))
-			teams.Add(_teamID, new List<UnitTracker>());
-		teams[_teamID].Add(_unit);
+		if(!units.Contains(_unit))
+			units.Add(_unit);
 	}
 	
 	public static void RemoveUnit(int _teamID, UnitTracker _unit)
 	{
-		if(teams.ContainsKey(_teamID))
-			teams[_teamID].Remove(_unit);
+		units.Remove(_unit);
 	}
 		
 	public static List<UnitTracker> GetTeam(int _teamID)
 	{
-		if(teams.ContainsKey(_teamID))
-			return new List<UnitTracker>( teams[_teamID] );
-		else
-			return new List<UnitTracker>();
+		return units.FindAll(u => u.playerID == _teamID);
 	}
 	
 	/// <summary>
@@ -47,12 +42,7 @@ public class GameManager : MonoBehaviour
 	/// </returns>
 	public static List<UnitTracker> GetAllUnits()
 	{
-		List<UnitTracker> allUnits = new List<UnitTracker>();
-		foreach(List<UnitTracker> team in teams.Values)
-		{
-			allUnits.AddRange(team);
-		}
-		return allUnits;
+		return new List<UnitTracker>(units);
 	}
 	
 	#endregion
@@ -76,12 +66,20 @@ public class GameManager : MonoBehaviour
 	protected PlayerControl localPlayerControl = null;
 	
 	public int currentTurn = 0;
-	public float lastTurnTimestamp = 0;
 	public float turnTick = 0;
 	
 	#endregion
 	
-	#region public methods
+	#region protected variables
+	
+	void UpdateWorld(float deltaTime)
+	{
+		List<UnitTracker> allunits = GetAllUnits();
+		foreach(UnitTracker unit in allunits)
+		{
+			unit.AI.StepAlongPath(deltaTime);
+		}
+	}
 	
 	#endregion
 	
@@ -97,57 +95,50 @@ public class GameManager : MonoBehaviour
 		NetworkManager.RequestHostList(gameType);
 	}
 	
-	void LateUpdate()
+	void Update()
 	{
-		float time = localGame ? Time.time : (float)Network.time;
 		float turnLength = 1f / (Network.sendRate);
+		turnTick += Time.deltaTime;
 		
 		if(isRunning)
-		{		
-			Time.timeScale = 1;
-			
-			if(turnTick < turnLength)
-			{
-				turnTick += time - lastTurnTimestamp;
-			}
-			else
-			{
-				//TODO: validate number of player controls matches number of players
-				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
-					
-				localPlayerControl.TryCaptureTurn(currentTurn+TURN_BUFFER_SIZE);
+		{					
+			if(turnTick >= turnLength)
+			{			
+				localPlayerControl.TryCaptureTurn(GameManager.CurrentTurn+GameManager.TURN_BUFFER_SIZE);
 				
+				//TODO: cache this somewhere and validate number of player controls matches number of players
+				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
+				
+				bool isUpToDate = true;
 				foreach(PlayerControl p in players)
 				{		
 					if(!p.IsUpToDate)
-					{
-						//pause simulation
-						Time.timeScale = 0;
-						Debug.Log("Pause");
-						return;
+					{						
+						isUpToDate = false;
+						
+						break;
 					}
 				}
-				//if(!GameManager.instance.localGame)
-				//{
+				
+				if(isUpToDate)
+				{									
 					foreach(PlayerControl p in players)
 					{
 						p.ProcessTurn(currentTurn);
 					}
-				//}
-				//else players[0].ProcessTurn(currentTurn);
-				
-				turnTick = turnTick - turnLength;
-				
-				currentTurn++; //increment turn
+					
+					UpdateWorld(turnLength);
+					
+					turnTick = turnTick - turnLength;
+					
+					currentTurn++; //increment turn
+				}
 			}
 		}
-		else //not running
+		else
 		{
-			Time.timeScale = 0;
 			turnTick = 0;
 		}
-		
-		lastTurnTimestamp = time;
 	}
 	
 	void OnGUI()
@@ -309,7 +300,6 @@ public class GameManager : MonoBehaviour
 			}
 		}
 		
-		lastTurnTimestamp = (float)_info.timestamp;
 		isRunning = true;
 		localGame = false;
 	}
@@ -330,7 +320,6 @@ public class GameManager : MonoBehaviour
 			}
 		}
 		
-		lastTurnTimestamp = (float)Time.time;
 		isRunning = true;
 		localGame = true;
 	}

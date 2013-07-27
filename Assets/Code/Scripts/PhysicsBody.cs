@@ -58,7 +58,7 @@ public class PhysicsBody : MonoBehaviour {
 		{
 		case ForceMode.Impulse:
 			activeForces.Add(force);
-			current.momentum = force;
+			current.momentum += force;
 			break;
 		case ForceMode.Force:
 			activeForces.Add(force);	
@@ -93,7 +93,7 @@ public class PhysicsBody : MonoBehaviour {
 		previous = current;
 		integrate(current, time, Time.deltaTime);
 		transform.position = new Vector3(current.position.x, current.position.y, transform.position.z);
-		//m_forces.clear();
+		activeForces.Clear();
 		//if physics are 2d. do this:
 		current.orientation.x = 0;
 		current.orientation.y = 0;
@@ -189,7 +189,7 @@ Derivative evaluate(State _state, float t, float dt, Derivative _derivative)
 void forces(State _state, float t, ref Vector2 force, ref Vector2 torque)
 {
 	// attract towards origin
-	force.y = -((9.8f)*mass);// * _state.position.j;
+	force.y = -((9.8f/3f)*mass);// * _state.position.j;
 
 	for(int i = 0; i < activeForces.Count; i++)
 		force = force + activeForces[i];//*/

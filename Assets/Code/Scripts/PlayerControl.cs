@@ -6,7 +6,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	#region public types
 	
-	public enum ControlAction
+	public enum ActionType
 	{
 		None,
 		SelectSingle,
@@ -20,20 +20,27 @@ public class PlayerControl : MonoBehaviour {
 	/// </summary>
 	//
 	[System.Serializable]
-	public class ControlSnapShot
-	{
-		public int turnID = 0;
-		public ControlAction action = PlayerControl.ControlAction.None;
-		public Vector2 aimVector = Vector2.zero;
+	public class ControlAction
+	{		
+		public ActionType type = ActionType.None;
+		
+		public Vector3 aimVector = Vector3.zero;
 		
 		//cursor positions in world space on the game plane
-		public Vector3 worldMouseDown = Vector2.zero;
-		public Vector2 worldMouseUp = Vector2.zero;
+		public Vector3 worldMouseDown = Vector3.zero;
+		public Vector3 worldMouseUp = Vector3.zero;
 		
-		public ControlSnapShot Clone ()
+		public ControlAction Clone ()
 		{
-			return (ControlSnapShot) MemberwiseClone();
+			return (ControlAction) MemberwiseClone();
 		}
+	}
+	
+	[System.Serializable]
+	public class ControlSnapshot
+	{
+		public int turnID = 0;
+		public List<ControlAction> actions = new List<ControlAction>();
 	}
 	
 	public enum SelectionState
@@ -96,8 +103,9 @@ public class PlayerControl : MonoBehaviour {
 	
 	protected int playerID = 0;
 	
-	protected ControlSnapShot snapShot = new ControlSnapShot();
-	protected List<ControlSnapShot> turnBuffer = new List<ControlSnapShot>();
+	protected ControlAction currentAction = new ControlAction();
+	protected ControlSnapshot currentSnapshot = new ControlSnapshot();
+	protected List<ControlSnapshot> turnBuffer = new List<ControlSnapshot>();
 	
 	protected UnitTracker aimingUnit = null;
 	
@@ -112,11 +120,11 @@ public class PlayerControl : MonoBehaviour {
 	{
 		foreach(UnitTracker unit in selectedUnits)
 		{
-			
+
 			GameObject rocket = Resources.Load("Rocket") as GameObject;
 			GameObject instRocket = Instantiate(rocket) as GameObject;
 			Rocket phyRocket = instRocket.GetComponent("Rocket") as Rocket;
-			phyRocket.Position = unit.transform.position;
+			phyRocket.Position = unit.transform.position + (aimVector.normalized * Mathf.Max(unit.collider.bounds.size.x, unit.collider.bounds.size.y));
 			float powerScale = aimVector.magnitude/maxAimingDistance;
 			
 			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);	
@@ -134,11 +142,13 @@ public class PlayerControl : MonoBehaviour {
 		aimingUnit.aimingReticle.renderer.enabled = true;
 		aimingUnit.aimingReticle.transform.position = endpoint;
 
-		snapShot.aimVector = _aimVector;
+		currentAction.aimVector = _aimVector;
 	}
 	
 	public bool TrySelect(Vector3 _pos)
 	{		
+		Debug.Log("Try Select Single");
+		
 		bool r = false;
 		
 		DeselectAll();
@@ -154,6 +164,8 @@ public class PlayerControl : MonoBehaviour {
 	
 	public bool TrySelectArea(Vector3 p1, Vector3 p2)
 	{
+		Debug.Log("Try Select Area");
+		
 		bool r = false;
 		
 		DeselectAll();
@@ -180,24 +192,22 @@ public class PlayerControl : MonoBehaviour {
 	{
 		//debug
 		if(Index == 0)
-			_unit.GetComponentInChildren<Renderer>().material.color = Color.red;
+			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.red;
 		else
-			_unit.GetComponentInChildren<Renderer>().material.color = Color.green;
+			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.green;
 		
 		//select
 		selectedUnits.Add(_unit);
-		selectState = SelectionState.Selected;
 	}
 	
 	public void DeselectAll()
 	{
 		//debug
 		foreach(UnitTracker unit in selectedUnits)
-			unit.GetComponentInChildren<Renderer>().material.color = Color.white;
+			unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.white;
 		
 		//deselect
 		selectedUnits.Clear();
-		selectState = SelectionState.None;
 	}
 	
 	public void MoveSelectedUnitsTo(Vector3 _pos)
@@ -237,46 +247,58 @@ public class PlayerControl : MonoBehaviour {
 		
 		//Debug.Log(string.Format("Player {0} Capturing {1}", Index, _turnID));
 		
-		//cache current snapshot and give it the appropriate turnID
-		ControlSnapShot s = snapShot.Clone();
-		s.turnID = _turnID;
-		turnBuffer.Add(s);
+		//cache current snapshot and give it the appropriate turnID if there isn't one made already
+		if(turnBuffer.Find(t => t.turnID == _turnID) == null)
+		{
+			ControlSnapshot s = new ControlSnapshot();
+			s.turnID = _turnID;
+			s.actions.AddRange(currentSnapshot.actions);
+			
+			turnBuffer.Add(s);
+			
+			//clear cache
+			currentSnapshot = new ControlSnapshot();
+		}
 		
-		//remove expired turned
+		//remove expired turnes
 		turnBuffer.RemoveAll(t => t.turnID < GameManager.CurrentTurn - GameManager.TURN_BUFFER_SIZE);
-		
-		//clear action
-		snapShot.action = ControlAction.None;
 	}
 	
 	public void ProcessTurn(int _turnID)
 	{
 		//Debug.Log(string.Format("Player {0} Processing {1}", Index, _turnID));
 		
-		//temp variables
-		RaycastHit hitInfo = new RaycastHit();
+		//cleanup selection
+		for(int i = 0; i < selectedUnits.Count; i++)
+		{
+			if(selectedUnits[i] == null)
+				selectedUnits.RemoveAt(i--);
+		}
 		
 		//get turn
-		ControlSnapShot s = turnBuffer.Find(t => t.turnID == _turnID);
+		ControlSnapshot s = turnBuffer.Find(t => t.turnID == _turnID);
 		
-		switch(s.action)
+		foreach(ControlAction action in s.actions)
 		{
-		case ControlAction.None:
-			break;
-		case ControlAction.SelectSingle:
-			if(!TrySelect(s.worldMouseDown))
-				DeselectAll();
-			break;
-		case ControlAction.SelectArea:
-			if(!TrySelectArea(s.worldMouseDown,s.worldMouseUp))
-				DeselectAll();
-			break;
-		case ControlAction.MoveSelected:
-			MoveSelectedUnitsTo(s.worldMouseDown);
-			break;
-		case ControlAction.FireSelected:
-			Fire(s.aimVector);
-			break;
+			switch(action.type)
+			{
+			case ActionType.None:
+				break;
+			case ActionType.SelectSingle:
+				if(!TrySelect(action.worldMouseDown))
+					DeselectAll();
+				break;
+			case ActionType.SelectArea:
+				if(!TrySelectArea(action.worldMouseDown,action.worldMouseUp))
+					DeselectAll();
+				break;
+			case ActionType.MoveSelected:
+				MoveSelectedUnitsTo(action.worldMouseDown);
+				break;
+			case ActionType.FireSelected:
+				Fire(action.aimVector);
+				break;
+			}
 		}
 	}
 	
@@ -295,6 +317,18 @@ public class PlayerControl : MonoBehaviour {
 		return hitInfo.point;
 	}
 	
+	public void RecordAction(ActionType _type)
+	{
+		ControlAction a = currentAction.Clone();
+		a.type = _type;
+		currentSnapshot.actions.Add(a);
+		
+		if(selectedUnits.Count > 0)
+			selectState = SelectionState.Selected;
+		else 
+			selectState = SelectionState.None;
+	}
+	
 	#endregion
 	
 	#region monobehaviour methods
@@ -304,10 +338,11 @@ public class PlayerControl : MonoBehaviour {
 	{						
 		//warm buffer to desired size
 		turnBuffer.Clear();
-		snapShot = new ControlSnapShot();
+		currentAction = new ControlAction();
+		currentSnapshot = new ControlSnapshot();
 		for(int i = GameManager.CurrentTurn; i < GameManager.CurrentTurn + GameManager.TURN_BUFFER_SIZE; i++)
 		{
-			ControlSnapShot s = snapShot.Clone();
+			ControlSnapshot s = new ControlSnapshot();
 			s.turnID = i;
 			turnBuffer.Add(s);
 		}
@@ -316,7 +351,7 @@ public class PlayerControl : MonoBehaviour {
 	{
 		if(Input.GetMouseButton(1) && aimingUnit != null)
 		{
-			Vector2 dir = snapShot.aimVector;
+			Vector2 dir = currentAction.aimVector;
 			Vector3 pos = aimingUnit.transform.position;
 			Vector3 endpoint = new Vector3(dir.x+pos.x, dir.y+pos.y, pos.z);
 			Gizmos.DrawLine(pos, endpoint);
@@ -330,7 +365,7 @@ public class PlayerControl : MonoBehaviour {
 		case SelectionState.SelectingArea:
 			if(Input.GetMouseButton(0))
 			{				
-				Vector3 p1 = Camera.mainCamera.WorldToScreenPoint(snapShot.worldMouseDown);
+				Vector3 p1 = Camera.mainCamera.WorldToScreenPoint(currentAction.worldMouseDown);
 				Vector3 p2 = Camera.mainCamera.WorldToScreenPoint(GetWorldMousePosition());
 				
 				Rect area = Rect.MinMaxRect(Mathf.Min(p1.x, p2.x), Mathf.Min(Screen.height - p1.y, Screen.height - p2.y), 
@@ -343,7 +378,7 @@ public class PlayerControl : MonoBehaviour {
 	}
 	// Update is called once per frame
 	void Update () 
-	{	
+	{			
 		//do not process left mouse if right if pressed
 		if( Input.GetMouseButton(1) == false)
 		{
@@ -351,7 +386,7 @@ public class PlayerControl : MonoBehaviour {
 			{
 				//cache pos
 				lastMouseDownPos = Input.mousePosition;
-				snapShot.worldMouseDown = GetWorldMousePosition();
+				currentAction.worldMouseDown = GetWorldMousePosition();
 				
 				switch(selectState)
 				{
@@ -371,7 +406,7 @@ public class PlayerControl : MonoBehaviour {
 			else if(Input.GetMouseButtonUp(0))
 			{
 				lastMouseUpPos = Input.mousePosition;
-				snapShot.worldMouseUp = GetWorldMousePosition();
+				currentAction.worldMouseUp = GetWorldMousePosition();
 				
 				switch(selectState)
 				{
@@ -380,12 +415,11 @@ public class PlayerControl : MonoBehaviour {
 					//nothing to do
 					break;
 				case SelectionState.PendingRelease:
-					//perform single select
-					snapShot.action = ControlAction.SelectSingle;
+					RecordAction(ActionType.SelectSingle);
 					break;
 				case SelectionState.SelectingArea:
 					//perform selection in given area
-					snapShot.action = ControlAction.SelectArea;
+					RecordAction(ActionType.SelectArea);
 					break;
 				}
 			}
@@ -395,6 +429,13 @@ public class PlayerControl : MonoBehaviour {
 				if( selectState == SelectionState.PendingRelease && Vector3.Distance(lastMouseDownPos, Input.mousePosition) > distanceBeforeAreaSelect )
 					selectState = SelectionState.SelectingArea;
 			}
+			else //mouse0 unpressed
+			{
+				if(selectState == SelectionState.PendingRelease)
+				{
+					RecordAction(ActionType.SelectSingle);
+				}
+			}
 		}
 		
 		//do not process right mouse if left if pressed
@@ -402,10 +443,9 @@ public class PlayerControl : MonoBehaviour {
 		{
 			if( Input.GetMouseButtonDown(1) )
 			{
-				lastMouseDownPos = Input.mousePosition;
-				snapShot.worldMouseDown = GetWorldMousePosition();
+				currentAction.worldMouseDown = GetWorldMousePosition();
 				
-				UnitTracker unit = GetUnitAtPosition(snapShot.worldMouseDown);
+				UnitTracker unit = GetUnitAtPosition(currentAction.worldMouseDown);
 				
 				if(unit != null && selectedUnits.Contains(unit))
 				{
@@ -414,22 +454,24 @@ public class PlayerControl : MonoBehaviour {
 				}
 				else
 				{	
-					snapShot.action = ControlAction.MoveSelected;
+					RecordAction(ActionType.MoveSelected);
 				}
 			}
 			else if(Input.GetMouseButtonUp(1))
 			{
 				lastMouseUpPos = Input.mousePosition;
-				snapShot.worldMouseUp = GetWorldMousePosition();
+				currentAction.worldMouseUp = GetWorldMousePosition();
 				
 				switch(selectState)
 				{
 				case SelectionState.Aiming:
+					
+					RecordAction(ActionType.FireSelected);
+					
 					if(selectedUnits.Count > 0)
 						selectState = SelectionState.Selected;
-					else selectState = SelectionState.None;
-					
-					snapShot.action = ControlAction.FireSelected;
+					else 
+						selectState = SelectionState.None;
 					
 					break;
 				}
@@ -478,58 +520,79 @@ public class PlayerControl : MonoBehaviour {
 	}
 	
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
-	{
-		//temp variables
+	{		
+		int bufferCount = 0;
 		int turnID = -1;
-		int action = -1;
+		int actionCount = 0;
+		int actionType = 0;
 		Vector3 aimVector = Vector3.zero;
-		Vector3 mouseUp = Vector3.zero;
-		Vector3 mouseDown = Vector3.zero;
+		Vector3 worldMouseUp = Vector3.zero;
+		Vector3 worldMouseDown = Vector3.zero;		
 		
-		int bufferCount = turnBuffer.Count;
+		if(stream.isWriting)
+		{			
+			bufferCount = turnBuffer.Count;
+			stream.Serialize(ref bufferCount);
 		
-		//serialise buffer count so we know now many to recieve
-		stream.Serialize(ref bufferCount);
-		
-		if(stream.isReading)
-			turnBuffer.Clear();
-		
-		for(int i = 0; i < bufferCount; i++)
-		{
-			ControlSnapShot s = null;
-			
-			//if we're writing, get variables to write
-			if(stream.isWriting)
+			for(int i = 0; i < bufferCount; i++)
 			{
-				s = turnBuffer[i];
+				ControlSnapshot s = turnBuffer[i];
 				
 				turnID = s.turnID;
-				action = (int)s.action;
-				aimVector = s.aimVector;
-				mouseUp = s.worldMouseUp;
-				mouseDown = s.worldMouseDown;
+				stream.Serialize(ref turnID);
+				
+				actionCount = s.actions.Count;
+				stream.Serialize(ref actionCount);
+				
+				for(int j = 0; j < actionCount; j++)
+				{
+					ControlAction a = s.actions[0];
+					
+					actionType = (int)a.type;
+					aimVector = a.aimVector;
+					worldMouseUp = a.worldMouseUp;
+					worldMouseDown = a.worldMouseDown;
+					
+					stream.Serialize(ref actionType);
+					stream.Serialize(ref aimVector);
+					stream.Serialize(ref worldMouseUp);
+					stream.Serialize(ref worldMouseDown);
+				}
 			}
-			else //create new snapshot to read into
-				s = new ControlSnapShot();
-			
-			//serialise
-			stream.Serialize(ref turnID);
-			stream.Serialize(ref action);
-			stream.Serialize(ref aimVector);
-			stream.Serialize(ref mouseUp);
-			stream.Serialize(ref mouseDown);
-			
-			//if we're reading, fill new snapshot
-			if(stream.isReading)
+		}
+		else //reading
+		{
+			stream.Serialize(ref bufferCount);
+			turnBuffer.Clear();			
+		
+			for(int i = 0; i < bufferCount; i++)
 			{
+				ControlSnapshot s = new ControlSnapshot();
+				
+				stream.Serialize(ref turnID);
 				s.turnID = turnID;
-				s.action = (ControlAction) action;
-				s.aimVector = aimVector;
-				s.worldMouseUp = mouseUp;
-				s.worldMouseDown = mouseDown;
+				
+				stream.Serialize(ref actionCount);
+				
+				for(int j = 0; j < actionCount; j++)
+				{
+					ControlAction a = new ControlAction();
+					
+					stream.Serialize(ref actionType);
+					stream.Serialize(ref aimVector);					
+					stream.Serialize(ref worldMouseUp);		
+					stream.Serialize(ref worldMouseDown);
+					
+					a.type = (ActionType) actionType;
+					a.aimVector = aimVector;
+					a.worldMouseUp = worldMouseUp;
+					a.worldMouseDown = worldMouseDown;
+					
+					s.actions.Add(a);
+				}
+				
 				turnBuffer.Add(s);
 			}
-			
 		}
 	}
 	

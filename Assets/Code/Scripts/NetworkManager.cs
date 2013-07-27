@@ -61,6 +61,7 @@ public class NetworkManager : MonoBehaviour {
 			networkState = NetworkState.Disconnected;
 			Network.Disconnect(200);
 			MasterServer.UnregisterHost();
+			MasterServer.updateRate = 30;
 		}
 	}
 	
@@ -70,6 +71,8 @@ public class NetworkManager : MonoBehaviour {
 		serverGameType = _gameType;
 		
 		Network.InitializeServer(1, listenPort, !Network.HavePublicAddress());
+		
+		MasterServer.updateRate = 0;
 		
 		networkState = NetworkState.ServerInitialising;
 	}
@@ -81,6 +84,8 @@ public class NetworkManager : MonoBehaviour {
 		Network.Connect(server);
 			
 		MasterServer.ClearHostList();
+		
+		MasterServer.updateRate = 0;
 		
 		networkState = NetworkState.ClientConnecting;
 		
@@ -124,6 +129,7 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log("Registering Game: " + serverName);
 		
 		MasterServer.RegisterHost(serverGameType, serverName);
+		MasterServer.updateRate = 0;
 	}
 	
 	void OnPlayerConnected(NetworkPlayer _player)
