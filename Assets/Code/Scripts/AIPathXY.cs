@@ -236,7 +236,7 @@ public class AIPathXY : MonoBehaviour {
 	/// Temp target.
 	/// </param>
 	public void MoveTo(Vector3 _pos)
-	{
+	{		
 		seeker.StartPath (GetFeetPosition(), _pos);
 	}
 	
@@ -337,13 +337,6 @@ public class AIPathXY : MonoBehaviour {
 		}
 	
 		transform.Translate (step, Space.World);
-	}
-	
-	public virtual void Update () 
-	{
-		if (!canMove) { return; }
-		
-		//StepAlongPath(Time.deltaTime);
 	}
 	
 	/** Point to where the AI is heading.

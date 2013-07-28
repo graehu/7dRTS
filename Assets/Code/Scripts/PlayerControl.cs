@@ -192,9 +192,9 @@ public class PlayerControl : MonoBehaviour {
 	{
 		//debug
 		if(Index == 0)
-			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.red;
-		else
 			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.green;
+		else
+			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.red;
 		
 		//select
 		selectedUnits.Add(_unit);
@@ -212,12 +212,28 @@ public class PlayerControl : MonoBehaviour {
 	
 	public void MoveSelectedUnitsTo(Vector3 _pos)
 	{
+		Pathfinding.NNConstraint constraint = new Pathfinding.NNConstraint();
+		
+		//AstarPath.active.GetNearest(
 		for(int i = 0; i < selectedUnits.Count; i++)
 		{
 			AIPathXY aiPath = selectedUnits[i].AI;
 			if(aiPath != null)
-			{
-				aiPath.SendMessageUpwards("MoveTo", _pos);
+			{				
+				Pathfinding.NNInfo info = AstarPath.active.GetNearest(_pos, constraint);
+				
+				if(info.constrainedNode != null)
+				{
+					constraint.excludedNodes.Add(info.constrainedNode);
+					_pos = info.constClampedPosition;
+				}
+				else
+				{
+					constraint.excludedNodes.Add(info.node);
+					_pos = info.clampedPosition;
+				}
+				
+				aiPath.MoveTo( _pos);
 			}
 			selectedUnits[i].aimingReticle.renderer.enabled = false;
 		}

@@ -167,6 +167,8 @@ namespace Pathfinding {
 		 */
 		public bool constrainDistance = true;
 		
+		public List<Node> excludedNodes = new List<Node>();
+		
 		/** Returns whether or not the graph conforms to this NNConstraint's rules.
 		  */
 		public virtual bool SuitableGraph (int graphIndex, NavGraph graph) {
@@ -180,6 +182,8 @@ namespace Pathfinding {
 			if (constrainArea && area >= 0 && node.area != area) return false;
 			
 			if (constrainTags && (tags >> node.tags & 0x1) == 0) return false;
+			
+			if ( excludedNodes.Contains(node) ) return false;
 			
 			return true;
 		}

@@ -29,4 +29,17 @@ public class UnitSpawnPoint : MonoBehaviour
 	}
 	
 	#endregion
+	
+	#region monobehaviour methods
+	
+	void OnDrawGizmos()
+	{
+		if(playerID == 0)
+			Gizmos.color = Color.green;
+		else
+			Gizmos.color = Color.red;
+		Gizmos.DrawSphere(transform.position, 1);
+	}
+	
+	#endregion
 }

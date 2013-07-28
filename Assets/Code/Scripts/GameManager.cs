@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
 	#region static variables
 	
 	public const int TURN_BUFFER_SIZE = 2;
+	public const float UNIT_SPACING = 2f;
+	
 	
 	public static GameManager Instance { get { return instance; } }
 	private static GameManager instance = null;
@@ -13,6 +15,8 @@ public class GameManager : MonoBehaviour
 	public static int CurrentTurn { get { return instance.currentTurn; } }
 	
 	private static List<UnitTracker> units = new List<UnitTracker>();
+	
+	public static PlayerControl LocalPlayer { get { return Instance.localPlayerControl; } }
 	
 	#endregion
 	
@@ -77,7 +81,9 @@ public class GameManager : MonoBehaviour
 		List<UnitTracker> allunits = GetAllUnits();
 		foreach(UnitTracker unit in allunits)
 		{
-			unit.AI.StepAlongPath(deltaTime);
+				//AstarPath.active.UpdateGraphs(unit.collider.bounds);
+				//unit.AI.UpdatePath();
+				unit.AI.StepAlongPath(deltaTime);
 		}
 	}
 	
