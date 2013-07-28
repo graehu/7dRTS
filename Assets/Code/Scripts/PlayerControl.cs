@@ -70,9 +70,6 @@ public class PlayerControl : MonoBehaviour {
 			return false;
 			*/
 			
-			/*if(GameManager.Instance.localGame)
-				return true;*/
-			
 			if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn) != null)
 				return true;
 			else
@@ -119,17 +116,22 @@ public class PlayerControl : MonoBehaviour {
 	public void Fire(Vector3 aimVector)
 	{
 		foreach(UnitTracker unit in selectedUnits)
-		{
-
-			GameObject rocket = Resources.Load("Rocket") as GameObject;
-			GameObject instRocket = Instantiate(rocket) as GameObject;
-			Rocket phyRocket = instRocket.GetComponent("Rocket") as Rocket;
-			phyRocket.Position = unit.transform.position + (aimVector.normalized * Mathf.Max(unit.collider.bounds.size.x, unit.collider.bounds.size.y));
+		{	
 			float powerScale = aimVector.magnitude/maxAimingDistance;
+			Vector2 power = aimVector.normalized*powerScale;
+			 
 			
-			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);	
+			//Tells the unit to tell it's weapon to fire.
+			unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
 			
-			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);
+			//TODO: Remove this spawning code and move it into the weapon.
+			/*GameObject rocket = Resources.Load("Rocket") as GameObject;
+			GameObject instRocket = Instantiate(rocket) as GameObject;
+			Projectile phyRocket = instRocket.GetComponent("Projectile") as Projectile;
+			phyRocket.Position = unit.transform.position + (aimVector.normalized * Mathf.Max(unit.collider.bounds.size.x, unit.collider.bounds.size.y));
+			//float powerScale = aimVector.magnitude/maxAimingDistance;
+			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);
+			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);*/
 			Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
 		}
 	}
@@ -240,6 +242,7 @@ public class PlayerControl : MonoBehaviour {
 				aiPath.MoveTo( _pos);
 			}
 			selectedUnits[i].aimingReticle.renderer.enabled = false;
+			selectedUnits[i].gameObject.BroadcastMessage("EndFire", SendMessageOptions.RequireReceiver);
 		}
 	}
 	

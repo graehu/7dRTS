@@ -191,26 +191,10 @@ void forces(State _state, float t, ref Vector2 force, ref Vector2 torque)
 	// attract towards origin
 	force.y = -((9.8f/3f)*mass);// * _state.position.j;
 
+	
+	//TODO: Add wind force here. Should probably have a static phyics controller object.
 	for(int i = 0; i < activeForces.Count; i++)
 		force = force + activeForces[i];//*/
-
-
-
-	// sine force to add some randomness to the motion
-	
-	//force.i += 10;// * sin(t*0.9f + 0.5f);
-	//force.j += 11;// * sin(t*0.5f + 0.4f);
-	//force.k += 12;// * sin(t*0.7f + 0.9f);
-
-	// sine torque to get some spinning action
-
-	//torque.i = 1.0f;// * sin(t*0.9f + 0.5f);
-	//torque.j = 1.1f;// * sin(t*0.5f + 0.4f);
-	//torque.k = 1.2f;// * sin(t*0.7f + 0.9f);
-
-	// damping torque so we dont spin too fast
-
-	//torque -= 0.2f * _state.angularVelocity;
 }
 	//TODO: Make simple poly class so as this function can be useful.
 	/*Vector2 collideSAT(polygon* _poly)
@@ -240,6 +224,7 @@ Vector2 collideSAT(rigidBody* _body)
 		_body->m_vertices[i] = _body->m_vertices[i]+_body->getPos();
 
 	vec3f MTV = polygon::collideSAT((polygon*)_body);
+	
 
 	for(int i = 0; i < m_vertices.size(); i++)
 		m_vertices[i] = m_vertices[i] - current.position;
@@ -264,4 +249,61 @@ Vector2 collideSAT(rigidBody* _body)
 		state.recalculate();
 		return state;
 	}
+	
+	
+	//I wrote this a couple years ago, looks pretty solid.
+	//It basically just takes a list of verts which make objects clockwise.
+	
+	//Tests bodyA against bodyB and finds the MTV for A to depen B
+	/*Vector2 CollideSAT(List<Vector2> bodyA, List<Vector2> bodyB)
+	{
+		List<Vector2> [] bodies = {bodyA, bodyB};
+		Vector2 MTV;//Minimum Translation Vector. (to separate the bodied)
+		float  MinOverlap = -99999;
+		//this tests all of this poly's axes against the incoming poly and vice versa.
+		for(uint i = 0; i < 2; i++)
+		{
+			for(uint ii = 0; ii < bodies[i].Count; ii++)
+			{
+				
+				List<Vector2> body = bodies[i];
+				///Create an edge direction vector. Then Find it's normal.
+				Vector2 edgeDir =  (body[(ii+1)%bodies[i].Count]) - (body[ii]);
+				edgeDir.Normalize(); //This might not be nessisary
+				Vector2 normal = Vector2(-edgeDir.j, edgeDir.i); //This technically isn't a normal. It's just a perp line.
+	
+				//Find the projected shape's ranges on the normal.
+				float [] max = new float[2];
+				float [] min = new float[2];
+				float [] diff = new float[2];
+				
+				for(uint iii = 0; iii < 2; iii++)
+				{
+					min[iii] = max[iii] = ((bodies[(i+iii)%2])[0].dot2(normal)); //2d dot product
+					
+					for(uint iv = 0; iv < (bodies[(i+iii)%2]).size(); iv++)
+					{
+						diff[iii] = ((*verts[(i+iii)%2])[iv].dot2(normal));//2d dot product
+						
+						if (diff[iii] < min[iii])
+							min[iii] = diff[iii];
+						
+						else if(diff[iii] > max[iii]) 
+							max[iii] = diff[iii];
+					}
+				}
+				float d0 = min[0] - max[1]; //overlap 1
+				float d1 = min[1] - max[0]; //overlap 2
+				
+				if(d0 > 0.0f || d1 > 0.0f) return false;
+				else if(d0 > -abs(MinOverlap) || d1 > -abs(MinOverlap))
+				{
+					MinOverlap = (d0>d1?d0:-d1);
+					MTV = -(normal*MinOverlap);
+				}
+			}
+		}
+		
+		return MTV;
+	}*/
 }
