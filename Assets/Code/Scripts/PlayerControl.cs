@@ -214,6 +214,8 @@ public class PlayerControl : MonoBehaviour {
 	{
 		Pathfinding.NNConstraint constraint = new Pathfinding.NNConstraint();
 		
+		//_pos.y -= (selectedUnits.Count/2)+1;
+		
 		//AstarPath.active.GetNearest(
 		for(int i = 0; i < selectedUnits.Count; i++)
 		{
@@ -221,6 +223,8 @@ public class PlayerControl : MonoBehaviour {
 			if(aiPath != null)
 			{				
 				Pathfinding.NNInfo info = AstarPath.active.GetNearest(_pos, constraint);
+				
+				//_pos.y += i;
 				
 				if(info.constrainedNode != null)
 				{
@@ -351,7 +355,10 @@ public class PlayerControl : MonoBehaviour {
 	
 	// Use this for initialization
 	void Awake () 
-	{						
+	{				
+		CameraControl cam = Camera.mainCamera.GetComponent<CameraControl>();
+		cam.transform.position = GameManager.Instance.playerCamPositions[Index].position;
+		
 		//warm buffer to desired size
 		turnBuffer.Clear();
 		currentAction = new ControlAction();

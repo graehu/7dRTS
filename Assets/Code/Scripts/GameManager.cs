@@ -62,6 +62,8 @@ public class GameManager : MonoBehaviour
 	public bool localGame = false;
 	public int maxConnections = 1;
 	
+	public Transform[] playerCamPositions = new Transform[0];
+	
 	#endregion
 	
 	#region protected variables

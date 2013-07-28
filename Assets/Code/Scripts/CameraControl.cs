@@ -45,13 +45,13 @@ public class CameraControl : MonoBehaviour {
 	{
 		Vector3 step = Vector3.zero;
 		
-		if(Input.mousePosition.x >= Screen.width)
+		if(Input.mousePosition.x == Screen.width)
 			step.x = 1;
-		else if(Input.mousePosition.x <= 0)
+		else if(Input.mousePosition.x == 0)
 			step.x = -1;
-		if(Input.mousePosition.y >= Screen.height)
+		if(Input.mousePosition.y == Screen.height)
 			step.y = 1;
-		else if(Input.mousePosition.y <= 0)
+		else if(Input.mousePosition.y == 0)
 			step.y = -1;
 		
 		step *= edgeScrollSpeed * Time.deltaTime;

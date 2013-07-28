@@ -168,6 +168,7 @@ namespace Pathfinding {
 		public bool constrainDistance = true;
 		
 		public List<Node> excludedNodes = new List<Node>();
+		public float excludedNodeSpacing = 2;
 		
 		/** Returns whether or not the graph conforms to this NNConstraint's rules.
 		  */
@@ -183,7 +184,11 @@ namespace Pathfinding {
 			
 			if (constrainTags && (tags >> node.tags & 0x1) == 0) return false;
 			
-			if ( excludedNodes.Contains(node) ) return false;
+			for(int i = 0; i < excludedNodes.Count; i++)
+			{
+				if(excludedNodes[i] == node || (node.position - excludedNodes[i].position).worldMagnitude < excludedNodeSpacing)
+					return false;
+			}
 			
 			return true;
 		}
