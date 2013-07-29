@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class UnitTracker : MonoBehaviour {
 	
@@ -14,6 +15,19 @@ public class UnitTracker : MonoBehaviour {
 	public int health = 100;
 	
 	public int playerID = 0;
+	
+	public int CurrentWeapon
+	{
+		set {
+				currentWeapon = (value > 0 ? value : 0);
+				currentWeapon = (currentWeapon>weapons.Count ? weapons.Count : currentWeapon);
+			}
+		get { return currentWeapon; }
+	}
+
+	protected int currentWeapon = 0;
+	
+	public List<Weapon> weapons;
 	protected bool isTracking = false;
 	
 	#region monobehaviour methods

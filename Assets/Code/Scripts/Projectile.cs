@@ -1,13 +1,15 @@
 using UnityEngine;
 using System.Collections;
 
-public class Rocket : PhysicsBody {
+public class Projectile : PhysicsBody {
 	
 	#region public members
+	
 	public float firePower = 5f; 	// the inital power of the shot.
 	public float maxThrust = 1f; 	// the speed of the thruster with full fuel.
 	public float minThrust = 0f; 	// the speed of the thruster once the fuel runs out.
 	public float fuelDuration = 1f; // how long the fuel lasts in seconds.
+	
 	#endregion
 	
 	
@@ -29,12 +31,7 @@ public class Rocket : PhysicsBody {
 		fuelTick += Time.deltaTime;
 		if(fuelTick < fuelDuration)
 		{
-			actualThrust = Mathf.Lerp(maxThrust, minThrust, fuelTick/fuelDuration);
-			
-			//TODO: Remove if air resistence is added.
-			//To make up for a lack of air resistence, if a body is flying faster than terminal velocity
-			//don't apply it's force. (also scale its force the closer it gets to it's terminal velocity)
-			
+			actualThrust = Mathf.Lerp(maxThrust, minThrust, fuelTick/fuelDuration);			
 			ApplyForce(actualThrust*current.velocity.normalized, ForceMode.Force);			
 		}
 		else
