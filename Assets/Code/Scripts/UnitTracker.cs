@@ -7,6 +7,7 @@ public class UnitTracker : MonoBehaviour {
 	public Vector3 UnitPos { get { return AI == null ? transform.position : AI.transform.position; } }
 	
 	public GameObject aimingReticle = null;
+	public GameObject healthBar = null;
 	
 	public AIPathXY AI = null;
 	
@@ -47,6 +48,8 @@ public class UnitTracker : MonoBehaviour {
 	{
 		if(health == 0)
 		{
+			if(aimingReticle != null)
+				healthBar.renderer.material.SetFloat("_Cutoff", Mathf.InverseLerp(0, 100, health));
 			StopTracking();
 			if(Network.peerType != NetworkPeerType.Disconnected)
 			{

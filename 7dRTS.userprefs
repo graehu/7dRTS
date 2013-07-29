@@ -1,13 +1,15 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Scripts\Weapon.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs">
     <Files>
-      <File FileName="Assets\Code\Scripts\Projectile.cs" Line="50" Column="2" />
-      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="27" Column="43" />
-      <File FileName="Assets\Code\Scripts\Weapon.cs" Line="40" Column="3" />
-      <File FileName="Assets\Code\Scripts\PhysicsBody.cs" Line="189" Column="18" />
-      <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="15" Column="26" />
-      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="414" Column="57" />
+      <File FileName="Assets\Code\Scripts\GameManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\Projectile.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\Weapon.cs" Line="45" Column="29" />
+      <File FileName="Assets\Code\Scripts\PhysicsBody.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="1" Column="1" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="417" Column="3" />
+      <File FileName="Assets\Code\Scripts\FollowTarget.cs" Line="44" Column="38" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -15,14 +17,14 @@
           <Node name="Assembly-CSharp" expanded="True">
             <Node name="Assets" expanded="True">
               <Node name="Code" expanded="True">
-                <Node name="Scripts" expanded="True">
-                  <Node name="Weapon.cs" selected="True" />
-                </Node>
+                <Node name="Scripts" expanded="True" />
               </Node>
               <Node name="Tools" expanded="True">
                 <Node name="AstarPathfindingProject" expanded="True">
                   <Node name="Core" expanded="True">
-                    <Node name="AI" expanded="True" />
+                    <Node name="AI" expanded="True">
+                      <Node name="Seeker.cs" selected="True" />
+                    </Node>
                   </Node>
                 </Node>
               </Node>

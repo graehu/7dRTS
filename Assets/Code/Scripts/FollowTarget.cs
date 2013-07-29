@@ -38,9 +38,9 @@ public class FollowTarget : MonoBehaviour {
 		else
 			transform.position = t.position;
 		
-		if(maxTurningSpeed > 0)
+		/*if(maxTurningSpeed > 0)
 			transform.rotation = Quaternion.RotateTowards( transform.rotation, t.rotation, turningSpeed);
 		else
-			transform.rotation = t.rotation;	
+			transform.rotation = t.rotation;*/	
 	}
 }

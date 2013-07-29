@@ -10,6 +10,7 @@ public class Weapon : MonoBehaviour {
 	public GameObject trailParticles = null;  //attaches to projectiles
 	public GameObject trailEffect = null;	  //attaches to projectiles
 	public GameObject projectile = null;	      //The spawned object, needs to be a rocket of some sort.
+	public GameObject reloadBar = null;
 	public Animator animator = null; 
 	public float fireRate = 1f; 			      //rounds fired per second
 	public AmmoType type = AmmoType.projectile;
@@ -71,6 +72,9 @@ public class Weapon : MonoBehaviour {
 			firetick += Time.deltaTime;
 		else 
 			firetick = 0;
+		
+		if(reloadBar != null)
+			reloadBar.renderer.material.SetFloat("_Cutoff", Mathf.InverseLerp(0,fireRate,firetick));
 		
 		if(firetick > fireRate)
 		{
