@@ -22,7 +22,9 @@ public class Projectile : PhysicsBody {
 	
 	
 	#region private members
+	
 	float fuelTick = 0;
+	
 	#endregion
 
 	// Use this for initialization
@@ -36,15 +38,13 @@ public class Projectile : PhysicsBody {
 		//This force needs to scale.
 		float actualThrust = 0;
 		fuelTick += _dt;
+
 		if(fuelTick < fuelDuration)
 		{
 			actualThrust = Mathf.Lerp(maxThrust, minThrust, fuelTick/fuelDuration);			
 			ApplyForce(actualThrust*current.velocity.normalized, ForceMode.Force);			
 		}
-		else
-		{			
-			//ApplyForce(minThrust*current.velocity.normalized, ForceMode.Force);
-		}
+
 		base.Simulate(_dt);
 		
 		if(Physics.CheckSphere(transform.position, collisionRadius, collisionMask))

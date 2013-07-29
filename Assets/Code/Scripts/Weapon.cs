@@ -10,11 +10,14 @@ public class Weapon : MonoBehaviour {
 	public GameObject trailParticles = null;  //attaches to projectiles
 	public GameObject trailEffect = null;	  //attaches to projectiles
 	public GameObject projectile = null;	      //The spawned object, needs to be a rocket of some sort.
+	public Animator animator = null; 
 	public float fireRate = 1f; 			      //rounds fired per second
 	public AmmoType type = AmmoType.projectile;
+	[RangeAttribute(0, 1f)]
 	private Vector2 power = Vector2.zero;
 	private bool isFiring = false;
 	private GameObject muzzleInstance = null;
+	
 	
 	#endregion
 	
@@ -32,29 +35,38 @@ public class Weapon : MonoBehaviour {
 	public void BeginFire(Vector2 _power)
 	{
 		power = _power;
-		isFiring = true; 
+		isFiring = true;
+		
+		animator.SetBool("Firing", true);
+		float angle = Vector2.Angle(power, -Vector2.up)/180f;
+		animator.SetFloat("AimDir", angle);
+
 		
 		if(muzzleParticle != null)
 		{
 			muzzleInstance = GameObject.Instantiate(muzzleParticle) as GameObject;
 		}
+		
+		
 	}
 	public void EndFire()
 	{
 		isFiring = false;
 		firetick = 0;
 	 	Destroy(muzzleInstance);
+		
+		animator.SetBool("Firing", false);
 	}
 	#endregion
 	#region private methods
 	// Use this for initialization
 	void Start ()
 	{
-	
 	}
 	// Update is called once per frame
 	void Update ()
-	{
+	{ 
+		
 		if(isFiring)
 			firetick += Time.deltaTime;
 		else 
@@ -62,6 +74,11 @@ public class Weapon : MonoBehaviour {
 		
 		if(firetick > fireRate)
 		{
+			AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
+			
+			if(info.length != 0)
+				animator.speed = info.length/fireRate;
+			
 			firetick = 0;
 			switch(type)
 			{
@@ -73,7 +90,6 @@ public class Weapon : MonoBehaviour {
 					Vector3 spawnPoint = new Vector3(power.normalized.x*2f, power.normalized.y*2f, 0) + transform.position;
 					GameObject instProjectile = Instantiate(projectile, spawnPoint, Quaternion.identity) as GameObject;
 					Projectile projb = instProjectile.GetComponentInChildren<Projectile>() as Projectile;
-					
 					
 					if(muzzleInstance != null)
 					{
@@ -94,12 +110,18 @@ public class Weapon : MonoBehaviour {
 						GameObject trail = GameObject.Instantiate(trailEffect, spawnPoint, Quaternion.identity) as GameObject;
 						trail.transform.parent = instProjectile.transform;
 					}
+					if(impactParticles != null)
+					{
+						GameObject explosion = GameObject.Instantiate(impactParticles) as GameObject;
+						explosion.particleSystem.Stop();
+						explosion.transform.parent = instProjectile.transform;
+					}
 					
 					projb.ApplyForce(power*projb.firePower, ForceMode.Impulse);
 				}
 				else Debug.Log("The projectile field is blank or the object is null");
-				
 				break;
+				
 			case AmmoType.ray:
 				//do a ray cast.
 				break;

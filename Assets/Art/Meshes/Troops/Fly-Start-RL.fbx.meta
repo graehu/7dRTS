@@ -1,0 +1,128 @@
+fileFormatVersion: 2
+guid: 81e4906b036e0cf4fb8d72ecb0e20d88
+ModelImporter:
+  serializedVersion: 15
+  fileIDToRecycleName:
+    100000: Bn_ElbowB
+    100002: Bn_ElbowF
+    100004: Bn_FootB
+    100006: Bn_FootF
+    100008: Bn_HandB
+    100010: Bn_HandF
+    100012: Bn_Head
+    100014: Bn_HeroBot
+    100016: Bn_HeroTop
+    100018: Bn_KneeB
+    100020: Bn_KneeF
+    100022: Bn_LegB
+    100024: Bn_LegF
+    100026: Bn_ShoulderB
+    100028: Bn_ShoulderF
+    100030: Bn_weapon
+    100032: //RootNode
+    100034: HeroBody
+    100036: HeroLegs
+    100038: locator1
+    100040: pPlane1
+    400000: Bn_ElbowB
+    400002: Bn_ElbowF
+    400004: Bn_FootB
+    400006: Bn_FootF
+    400008: Bn_HandB
+    400010: Bn_HandF
+    400012: Bn_Head
+    400014: Bn_HeroBot
+    400016: Bn_HeroTop
+    400018: Bn_KneeB
+    400020: Bn_KneeF
+    400022: Bn_LegB
+    400024: Bn_LegF
+    400026: Bn_ShoulderB
+    400028: Bn_ShoulderF
+    400030: Bn_weapon
+    400032: //RootNode
+    400034: HeroBody
+    400036: HeroLegs
+    400038: locator1
+    400040: pPlane1
+    4300000: HeroLegs
+    4300002: HeroBody
+    4300004: pPlane1
+    7400000: Fly-Start-RL
+    9500000: //RootNode
+    13700000: HeroBody
+    13700002: HeroLegs
+    13700004: pPlane1
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    clipAnimations:
+    - name: Fly-Start-RL
+      takeName: Take 001
+      firstFrame: 1
+      lastFrame: 40
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      transformMask: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    handles: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  additionalBone: 1
+  animationType: 2
+  userData: 
