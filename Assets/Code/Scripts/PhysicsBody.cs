@@ -4,6 +4,11 @@ using System.Collections.Generic;
 
 public class PhysicsBody : MonoBehaviour {
 	
+	#region static helpers
+	
+	public static List<PhysicsBody> bodies = new List<PhysicsBody>();
+	
+	#endregion
 	
 	#region public members
 	public float mass = 1f;
@@ -38,10 +43,12 @@ public class PhysicsBody : MonoBehaviour {
 		get {return current.velocity;}
 		set {current.velocity = value;}
 	}
+	public Vector2 LastVelocity
+	{
+		get {return previous.velocity;}
+	}
 	
-	#endregion
-	
-	
+	#endregion	
 	
 	/// <summary>
 	/// Applies an impulsive force.
@@ -83,16 +90,26 @@ public class PhysicsBody : MonoBehaviour {
 		current.inverseInertiaTensor = 1.0f / current.inertiaTensor;
 		current.recalculate();
 		previous = current;
+		
+		//add to existing bodies
+		bodies.Add(this);
 	}
-	// Update is called once per frame
-	public void Update ()
+	
+	void OnDestroy()
 	{
-		time += Time.deltaTime;
+		bodies.Remove(this);
+	}
+	
+	// Update is called once per frame
+	public virtual void Simulate (float _dt)
+	{
+		time += _dt;
 		current.size = size;
 		current.mass = mass;
 		previous = current;
-		integrate(current, time, Time.deltaTime);
+		integrate(current, time, _dt);
 		transform.position = new Vector3(current.position.x, current.position.y, transform.position.z);
+		transform.rotation = Quaternion.LookRotation(Velocity);
 		activeForces.Clear();
 		//if physics are 2d. do this:
 		current.orientation.x = 0;
@@ -128,7 +145,9 @@ public class PhysicsBody : MonoBehaviour {
 	        //orientation.normalise();
 	        //spin = (quaternion(0, angularVelocity.i, angularVelocity.j, angularVelocity.k) * orientation)*0.5;
 	    }
-	};
+		
+		public State Clone() { return MemberwiseClone() as State; }
+	}
 
 
 
@@ -138,7 +157,7 @@ public class PhysicsBody : MonoBehaviour {
 		public Vector2 force;                  	///< force in the derivative of momentum.
 		public Quaternion spin = new Quaternion(); ///< spin is the derivative of the orientation quaternion.
 		public Vector2 torque;                 	///< torque is the derivative of angular momentum.
-	};
+	}
 	
 	
 
@@ -146,9 +165,9 @@ public class PhysicsBody : MonoBehaviour {
 void integrate(State _state, float t, float dt)
 {
 	Derivative a = evaluate(_state, t);
-	Derivative b = evaluate(_state, t, dt*0.5f, a);
-	Derivative c = evaluate(_state, t, dt*0.5f, b);
-	Derivative d = evaluate(_state, t, dt, c);
+	Derivative b = evaluate(_state.Clone(), t, dt*0.5f, a);
+	Derivative c = evaluate(_state.Clone(), t, dt*0.5f, b);
+	Derivative d = evaluate(_state.Clone(), t, dt, c);
 	
 	_state.position += 1.0f/6.0f * dt * (a.velocity + 2.0f*(b.velocity + c.velocity) + d.velocity);
 	_state.momentum += 1.0f/6.0f * dt * (a.force + 2.0f*(b.force + c.force) + d.force);
@@ -189,7 +208,7 @@ Derivative evaluate(State _state, float t, float dt, Derivative _derivative)
 void forces(State _state, float t, ref Vector2 force, ref Vector2 torque)
 {
 	// attract towards origin
-	force.y = -((9.8f/3f)*mass);// * _state.position.j;
+	force.y = -((9.8f*2)*mass);// * _state.position.j;
 
 	
 	//TODO: Add wind force here. Should probably have a static phyics controller object.

@@ -4,23 +4,43 @@ using System.Collections;
 public class FollowTarget : MonoBehaviour {
 	
 	public Transform target = null;
+	public PhysicsBody body = null;
+	
 	public float maxSpeed = 10;
 	public float maxTurningSpeed = 10;
 		
 	// Update is called once per frame
-	void Update () 
-	{
-		if(target != null)
+	void LateUpdate () 
+	{		
+		Transform t;
+		
+		float speed = maxSpeed * Time.deltaTime;
+		float turningSpeed = maxTurningSpeed * Time.deltaTime;
+		
+		if(body != null)
 		{
-			if(maxSpeed > 0)
-				transform.position = Vector3.MoveTowards( transform.position, target.position, maxSpeed * Time.deltaTime);
-			else
-				transform.position = target.position;
+			speed = body.LastVelocity.magnitude * Time.deltaTime;
+			//maxTurningSpeed = body.angualarVelocity.magnitude;
+			turningSpeed = 0 * GameManager.TurnLength;
 			
-			if(maxTurningSpeed > 0)
-				transform.rotation = Quaternion.RotateTowards( transform.rotation, target.rotation, maxTurningSpeed * Time.deltaTime);
-			else
-				transform.rotation = target.rotation;	
+			t = body.transform;
 		}
+		else if(target != null)
+		{
+			t = target;
+		}
+		else
+			return;
+			
+			
+		if(maxSpeed > 0)
+			transform.position = Vector3.MoveTowards( transform.position, t.position, speed);
+		else
+			transform.position = t.position;
+		
+		if(maxTurningSpeed > 0)
+			transform.rotation = Quaternion.RotateTowards( transform.rotation, t.rotation, turningSpeed);
+		else
+			transform.rotation = t.rotation;	
 	}
 }

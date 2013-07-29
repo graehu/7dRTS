@@ -72,7 +72,7 @@ public class Weapon : MonoBehaviour {
 					//TODO: Make the spawn point spawn more accurately
 					Vector3 spawnPoint = new Vector3(power.normalized.x*2f, power.normalized.y*2f, 0) + transform.position;
 					GameObject instProjectile = Instantiate(projectile, spawnPoint, Quaternion.identity) as GameObject;
-					Projectile projb = instProjectile.GetComponent("Projectile") as Projectile;
+					Projectile projb = instProjectile.GetComponentInChildren<Projectile>() as Projectile;
 					
 					
 					if(muzzleInstance != null)

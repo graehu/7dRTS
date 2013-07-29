@@ -62,11 +62,7 @@ public class UnitTracker : MonoBehaviour {
 		}
 	}
 	
-	#endregion
-	
-	#region private methods
-	
-	void OnDamage()
+	public void OnDamage()
 	{
 		health = 0;
 	}

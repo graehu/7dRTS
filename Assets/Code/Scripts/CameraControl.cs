@@ -36,7 +36,8 @@ public class CameraControl : MonoBehaviour {
 	#region monobehaviour mnethods
 	
 	// Use this for initialization
-	void Start () {
+	void Start () 
+	{
 	
 	}
 	
@@ -45,16 +46,19 @@ public class CameraControl : MonoBehaviour {
 	{
 		Vector3 step = Vector3.zero;
 		
-		if(Input.mousePosition.x == Screen.width)
-			step.x = 1;
-		else if(Input.mousePosition.x == 0)
-			step.x = -1;
-		if(Input.mousePosition.y == Screen.height)
-			step.y = 1;
-		else if(Input.mousePosition.y == 0)
-			step.y = -1;
+		if(Screen.fullScreen)
+		{
+			if(Input.mousePosition.x >= Screen.width-2)
+				step.x = 1;
+			else if(Input.mousePosition.x <= 2)
+				step.x = -1;
+			if(Input.mousePosition.y >= Screen.height-2)
+				step.y = 1;
+			else if(Input.mousePosition.y <= 2)
+				step.y = -1;
 		
-		step *= edgeScrollSpeed * Time.deltaTime;
+			step *= edgeScrollSpeed * Time.deltaTime;
+		}
 		
 		if(Input.GetMouseButtonDown(2))
 		{

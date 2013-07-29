@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
 	private static GameManager instance = null;
 	
 	public static int CurrentTurn { get { return instance.currentTurn; } }
+	public static float TurnLength { get { return 1f / (Network.sendRate); } }
 	
 	private static List<UnitTracker> units = new List<UnitTracker>();
 	
@@ -81,11 +82,15 @@ public class GameManager : MonoBehaviour
 	void UpdateWorld(float deltaTime)
 	{
 		List<UnitTracker> allunits = GetAllUnits();
-		foreach(UnitTracker unit in allunits)
+		for(int i = 0; i < allunits.Count; i++)
 		{
-				//AstarPath.active.UpdateGraphs(unit.collider.bounds);
-				//unit.AI.UpdatePath();
-				unit.AI.StepAlongPath(deltaTime);
+			UnitTracker unit = allunits[i];
+			unit.AI.StepAlongPath(deltaTime);
+		}
+		
+		for(int i = 0; i < PhysicsBody.bodies.Count; i++)
+		{
+			PhysicsBody.bodies[i].Simulate(deltaTime);
 		}
 	}
 	
@@ -105,12 +110,11 @@ public class GameManager : MonoBehaviour
 	
 	void Update()
 	{
-		float turnLength = 1f / (Network.sendRate);
 		turnTick += Time.deltaTime;
 		
 		if(isRunning)
 		{					
-			if(turnTick >= turnLength)
+			if(turnTick >= TurnLength)
 			{			
 				localPlayerControl.TryCaptureTurn(GameManager.CurrentTurn+GameManager.TURN_BUFFER_SIZE);
 				
@@ -135,9 +139,9 @@ public class GameManager : MonoBehaviour
 						p.ProcessTurn(currentTurn);
 					}
 					
-					UpdateWorld(turnLength);
+					UpdateWorld(TurnLength);
 					
-					turnTick = turnTick - turnLength;
+					turnTick = turnTick - TurnLength;
 					
 					currentTurn++; //increment turn
 				}
@@ -209,6 +213,11 @@ public class GameManager : MonoBehaviour
 				if(GUILayout.Button("Play Offline"))
 				{
 					BeginLocalGame();
+				}
+				
+				if(GUILayout.Button("Quit"))
+				{
+					Application.Quit();
 				}
 			}
 			

@@ -1,16 +1,15 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Scripts\PlayerControl.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs">
     <Files>
       <File FileName="Assets\Code\Scripts\NetworkManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="217" Column="5" />
       <File FileName="Assets\Code\Scripts\GameManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\FollowTarget.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\FollowTarget.cs" Line="29" Column="7" />
       <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="1" Column="1" />
       <File FileName="Assets\Code\Scripts\UnitSpawnPoint.cs" Line="1" Column="1" />
       <File FileName="Assets\Code\Scripts\AIPathXY.cs" Line="1" Column="1" />
       <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\AIPath.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\Rocket.cs" Line="1" Column="1" />
       <File FileName="Assets\Code\Scripts\PhysicsBody.cs" Line="1" Column="1" />
       <File FileName="Assets\Code\Scripts\DamageInfo.cs" Line="1" Column="1" />
       <File FileName="Assets\Code\Scripts\CameraControl.cs" Line="1" Column="1" />
@@ -18,18 +17,22 @@
       <File FileName="Assets\Tools\AstarPathfindingProject\Modifiers\RaycastModifier.cs" Line="1" Column="1" />
       <File FileName="Assets\Tools\AstarPathfindingProject\Core\astarclasses.cs" Line="1" Column="1" />
       <File FileName="Assets\Tools\AstarPathfindingProject\Generators\GridGenerator.cs" Line="1" Column="1" />
+      <File FileName="Assets\Code\Scripts\Weapon.cs" Line="75" Column="52" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="415" Column="46" />
+      <File FileName="Assets\Code\Scripts\Projectile.cs" Line="1" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
           <Node name="Assembly-CSharp" expanded="True">
             <Node name="Assets" expanded="True">
-              <Node name="Code" expanded="True">
-                <Node name="Scripts" expanded="True" />
-              </Node>
               <Node name="Tools" expanded="True">
                 <Node name="AstarPathfindingProject" expanded="True">
-                  <Node name="Core" expanded="True" />
+                  <Node name="Core" expanded="True">
+                    <Node name="AI" expanded="True">
+                      <Node name="Seeker.cs" selected="True" />
+                    </Node>
+                  </Node>
                 </Node>
               </Node>
             </Node>
@@ -39,7 +42,10 @@
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
+    <BreakpointStore>
+      <Breakpoint file="D:\rts\Assets\Code\Scripts\PlayerControl.cs" line="588" />
+      <Breakpoint file="D:\rts\Assets\Code\Scripts\Weapon.cs" line="98" />
+    </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

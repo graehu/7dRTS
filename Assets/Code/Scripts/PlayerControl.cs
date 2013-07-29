@@ -284,7 +284,7 @@ public class PlayerControl : MonoBehaviour {
 		}
 		
 		//remove expired turnes
-		turnBuffer.RemoveAll(t => t.turnID < GameManager.CurrentTurn - GameManager.TURN_BUFFER_SIZE);
+		turnBuffer.RemoveAll(t => t.turnID < GameManager.CurrentTurn - GameManager.TURN_BUFFER_SIZE - 1);
 	}
 	
 	public void ProcessTurn(int _turnID)
