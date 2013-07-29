@@ -132,7 +132,7 @@ public class PlayerControl : MonoBehaviour {
 			//float powerScale = aimVector.magnitude/maxAimingDistance;
 			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);
 			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);*/
-			Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
+			//Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
 		}
 	}
 	
@@ -358,10 +358,7 @@ public class PlayerControl : MonoBehaviour {
 	
 	// Use this for initialization
 	void Awake () 
-	{				
-		CameraControl cam = Camera.mainCamera.GetComponent<CameraControl>();
-		cam.transform.position = GameManager.Instance.playerCamPositions[Index].position;
-		
+	{						
 		//warm buffer to desired size
 		turnBuffer.Clear();
 		currentAction = new ControlAction();
@@ -373,6 +370,16 @@ public class PlayerControl : MonoBehaviour {
 			turnBuffer.Add(s);
 		}
 	}
+	
+	void Start()
+	{
+		if(networkView.isMine || Network.peerType == NetworkPeerType.Disconnected)
+		{
+			CameraControl cam = Camera.mainCamera.GetComponent<CameraControl>();
+			cam.transform.position = GameManager.Instance.playerCamPositions[Index].position;
+		}
+	}
+	
 	void OnDrawGizmos()
 	{
 		if(Input.GetMouseButton(1) && aimingUnit != null)
@@ -477,6 +484,10 @@ public class PlayerControl : MonoBehaviour {
 				{
 					selectState = SelectionState.Aiming;
 					aimingUnit = unit;
+				}
+				else if(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+				{
+					selectState = SelectionState.Aiming;
 				}
 				else
 				{	
