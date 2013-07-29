@@ -48,21 +48,34 @@ public class Projectile : PhysicsBody {
 		base.Simulate(_dt);
 		
 		if(Physics.CheckSphere(transform.position, collisionRadius, collisionMask))
-		{
-			Collider[] intersections = Physics.OverlapSphere(transform.position, damageRadius, damageMask);
-			for(int i = 0; i < intersections.Length; i++)
+		{			
+			Collider[] damagable = Physics.OverlapSphere(transform.position, damageRadius, damageMask);
+			
+			bool validCollision = damagable.Length == 0;
+			
+			for(int i = 0; i < damagable.Length; i++)
 			{
-				UnitTracker unit = intersections[i].GetComponent<UnitTracker>();
-				unit.OnDamage();
+				UnitTracker unit = damagable[i].GetComponent<UnitTracker>();
+				if(unit != null && unit.playerID != GameManager.LocalPlayer.Index)
+				{
+					unit.OnDamage(25);
+					validCollision = true;
+				}
 			}
+			
+			if(!validCollision)
+				return;
 			
 			GameObject parent = transform.parent.gameObject;
 			
 			//find, stop, detach and pend particles for destruction
-			ParticleSystem p = parent.GetComponentInChildren<ParticleSystem>();
-			p.Stop();
-			p.transform.parent = null;
-			Destroy(p.gameObject, p.startLifetime);
+			ParticleSystem[] particleSystems = parent.GetComponentsInChildren<ParticleSystem>();
+			foreach(ParticleSystem p in particleSystems)
+			{
+				p.Stop();
+				p.transform.parent = null;
+				Destroy(p.gameObject, p.startLifetime);
+			}
 			
 			//spawn things
 			foreach(GameObject gobj in spawnOnDestroy)
@@ -72,7 +85,7 @@ public class Projectile : PhysicsBody {
 			}
 			
 			//destroy self
-			DestroyImmediate(parent);
+			Destroy(parent);
 		}
 		
 	}
@@ -83,11 +96,5 @@ public class Projectile : PhysicsBody {
 		Vector3 endpoint = new Vector3(transform.position.x+dir.x, transform.position.y+dir.y,transform.position.z);
 		Gizmos.DrawLine(transform.position, endpoint);
 		Gizmos.DrawWireSphere(transform.position, collisionRadius);
-	}
-	
-	void OnCollisionEnter(Collision _other)
-	{
-		_other.gameObject.SendMessage("OnDamage", SendMessageOptions.DontRequireReceiver);
-		Destroy(gameObject);
 	}
 }

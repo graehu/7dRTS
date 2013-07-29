@@ -14,11 +14,14 @@ public class Weapon : MonoBehaviour {
 	public Animator animator = null; 
 	public float fireRate = 1f; 			      //rounds fired per second
 	public AmmoType type = AmmoType.projectile;
+	public Transform projectileSpawnPoint = null;
 	[RangeAttribute(0, 1f)]
 	private Vector2 power = Vector2.zero;
 	private bool isFiring = false;
 	private GameObject muzzleInstance = null;
 	
+	public Vector2 Power { get { return power; } } 
+	public bool IsFiring { get { return isFiring; } }
 	
 	#endregion
 	
@@ -80,8 +83,9 @@ public class Weapon : MonoBehaviour {
 		{
 			AnimatorStateInfo info = animator.GetCurrentAnimatorStateInfo(0);
 			
-			if(info.length != 0)
-				animator.speed = info.length/fireRate;
+			animator.ForceStateNormalizedTime(0);
+			//if(info.length != 0)
+				//animator.speed = info.length/fireRate;
 			
 			firetick = 0;
 			switch(type)
@@ -92,6 +96,7 @@ public class Weapon : MonoBehaviour {
 				{
 					//TODO: Make the spawn point spawn more accurately
 					Vector3 spawnPoint = new Vector3(power.normalized.x*2f, power.normalized.y*2f, 0) + transform.position;
+					
 					GameObject instProjectile = Instantiate(projectile, spawnPoint, Quaternion.identity) as GameObject;
 					Projectile projb = instProjectile.GetComponentInChildren<Projectile>() as Projectile;
 					

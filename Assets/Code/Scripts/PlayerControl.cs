@@ -12,7 +12,8 @@ public class PlayerControl : MonoBehaviour {
 		SelectSingle,
 		SelectArea,
 		MoveSelected,
-		FireSelected
+		FireSelected,
+		FireSelectedPoint
 	}
 	
 	/// <summary>
@@ -117,22 +118,29 @@ public class PlayerControl : MonoBehaviour {
 	{
 		foreach(UnitTracker unit in selectedUnits)
 		{	
-			float powerScale = aimVector.magnitude/maxAimingDistance;
-			Vector2 power = aimVector.normalized*powerScale;
-			 
-			
-			//Tells the unit to tell it's weapon to fire.
-			unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
-			
-			//TODO: Remove this spawning code and move it into the weapon.
-			/*GameObject rocket = Resources.Load("Rocket") as GameObject;
-			GameObject instRocket = Instantiate(rocket) as GameObject;
-			Projectile phyRocket = instRocket.GetComponent("Projectile") as Projectile;
-			phyRocket.Position = unit.transform.position + (aimVector.normalized * Mathf.Max(unit.collider.bounds.size.x, unit.collider.bounds.size.y));
-			//float powerScale = aimVector.magnitude/maxAimingDistance;
-			aimVector = aimVector.normalized*(powerScale*phyRocket.firePower);
-			phyRocket.ApplyForce(aimVector, ForceMode.Impulse);*/
-			//Debug.Log( string.Format("'{0}' Fired: {1}", unit.name, aimVector.ToString()) );
+			if(unit.AI.TargetReached)
+			{
+				float powerScale = aimVector.magnitude/maxAimingDistance;
+				Vector2 power = aimVector.normalized*powerScale;
+				 
+				//Tells the unit to tell it's weapon to fire.
+				unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
+			}
+		}
+	}
+	
+	public void FireAtPoint(Vector3 _pos)
+	{
+		foreach(UnitTracker unit in selectedUnits)
+		{	
+			if(unit.AI.TargetReached)
+			{
+				Vector2 aimVector = _pos - unit.transform.position;
+				Vector2 power = aimVector.normalized;
+				 
+				//Tells the unit to tell it's weapon to fire.
+				unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
+			}
 		}
 	}
 	
@@ -321,6 +329,9 @@ public class PlayerControl : MonoBehaviour {
 			case ActionType.FireSelected:
 				Fire(action.aimVector);
 				break;
+			case ActionType.FireSelectedPoint:
+				FireAtPoint(action.worldMouseDown);
+				break;
 			}
 		}
 	}
@@ -376,7 +387,7 @@ public class PlayerControl : MonoBehaviour {
 		if(networkView.isMine || Network.peerType == NetworkPeerType.Disconnected)
 		{
 			CameraControl cam = Camera.mainCamera.GetComponent<CameraControl>();
-			cam.transform.position = GameManager.Instance.playerCamPositions[Index].position;
+			cam.MoveTo( GameManager.Instance.playerCamPositions[Index].position );
 		}
 	}
 	
@@ -487,7 +498,7 @@ public class PlayerControl : MonoBehaviour {
 				}
 				else if(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
 				{
-					selectState = SelectionState.Aiming;
+					RecordAction(ActionType.FireSelectedPoint);
 				}
 				else
 				{	

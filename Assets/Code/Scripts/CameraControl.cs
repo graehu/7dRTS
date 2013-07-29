@@ -10,17 +10,29 @@ public class CameraControl : MonoBehaviour {
 	public float edgeScrollSpeed = 10;
 	public float zoomSpeed = 10;
 	
+	public float minZoomDistance = 1;
+	
 	public LayerMask movePlaneMask;
 	
 	#endregion
 	
 	#region protected variables
 	
+	public Vector3 desiredPos = Vector3.zero;
 	public Vector3 lastMousePos = Vector3.zero;
 	
 	#endregion
 	
 	#region public methods
+	
+	public void MoveTo(Vector3 _pos)
+	{
+		desiredPos = _pos;
+	}
+	
+	#endregion
+	
+	#region private methods
 	
 	Vector3 GetWorldMousePosition()
 	{
@@ -31,6 +43,24 @@ public class CameraControl : MonoBehaviour {
 		return hitInfo.point;
 	}
 	
+	Vector2 GetCameraFrustumCrossSectionSize(float distance)
+	{		
+		float frustumHeight = 2.0f * distance * Mathf.Tan(Camera.mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+		float frustumWidth = frustumHeight * Camera.mainCamera.aspect;
+		
+		//return Rect.MinMaxRect(pos.x - frustumWidth*0.5f, pos.y + frustumHeight*0.5f, pos.x + frustumWidth*0.5f, pos.y - frustumHeight*0.5f);
+		return new Vector2(frustumWidth, frustumHeight);
+	}
+	
+	float GetDistanceForCameraCrossSectionSize(float width, float height)
+	{
+		//choose smallest fitting height
+		height = Mathf.Min( height, width / Camera.mainCamera.aspect );
+		//calc distance
+		float distance = height * 0.5f / Mathf.Tan(Camera.mainCamera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+		return distance;
+	}
+	
 	#endregion
 	
 	#region monobehaviour mnethods
@@ -38,7 +68,7 @@ public class CameraControl : MonoBehaviour {
 	// Use this for initialization
 	void Start () 
 	{
-	
+		desiredPos = transform.position;
 	}
 	
 	// Update is called once per frame
@@ -46,6 +76,7 @@ public class CameraControl : MonoBehaviour {
 	{
 		Vector3 step = Vector3.zero;
 		
+		//handle edge scrolling
 		if(Screen.fullScreen)
 		{
 			if(Input.mousePosition.x >= Screen.width-2)
@@ -60,54 +91,47 @@ public class CameraControl : MonoBehaviour {
 			step *= edgeScrollSpeed * Time.deltaTime;
 		}
 		
+		//handle drag scroll
 		if(Input.GetMouseButtonDown(2))
 		{
-			if(Camera.mainCamera.isOrthoGraphic)
-				lastMousePos = Camera.mainCamera.ScreenToWorldPoint(Input.mousePosition);
-			else
-				lastMousePos = GetWorldMousePosition();
+			lastMousePos = GetWorldMousePosition();
 		}
 		else if(Input.GetMouseButton(2))
 		{
 			Vector3 mousePos;
 			
-			if(Camera.mainCamera.isOrthoGraphic)
-				mousePos = Camera.mainCamera.ScreenToWorldPoint(Input.mousePosition);
-			else
-				mousePos = GetWorldMousePosition();
+			mousePos = GetWorldMousePosition();
 			
 			step = lastMousePos - mousePos;
 			lastMousePos = mousePos + step;
 		}
 		
-		float zoomStep = Input.GetAxis("Mouse ScrollWheel");
-		if(Camera.mainCamera.isOrthoGraphic)
-		{
-			step.z = zoomStep;
-		}
-		else
-		{
-			step.z = zoomStep;
-		}
-		step.z *= zoomSpeed;
+		//handle zooming
+		Vector3 zoomStep = Vector3.zero;
 		
-		Camera.mainCamera.transform.Translate(step);
-		Vector3 pos = Camera.mainCamera.transform.position;
-
-		//bound Z
-		pos.z = Mathf.Clamp(pos.z, boundingArea.bounds.min.z, boundingArea.bounds.max.z);
+		float maxZoomDistance = GetDistanceForCameraCrossSectionSize(boundingArea.bounds.size.x, boundingArea.bounds.size.y);
 		
-		//calc bounds compensation to keep world in view
-		float comp = Mathf.InverseLerp(boundingArea.bounds.min.z, boundingArea.bounds.max.z, pos.z);
+		float zoomInput = Input.GetAxis("Mouse ScrollWheel");
 		
-		Vector3 min = boundingArea.bounds.center - (boundingArea.bounds.extents * comp);
-		Vector3 max = boundingArea.bounds.center + (boundingArea.bounds.extents * comp);
+		if(zoomInput != 0)
+			zoomStep = Camera.mainCamera.ScreenPointToRay(Input.mousePosition).direction * zoomSpeed * zoomInput;	
 		
-		//bound in XY
-		pos.y = Mathf.Clamp(pos.y, min.y, max.y);
-		pos.x = Mathf.Clamp(pos.x, min.x, max.x);
+		step += zoomStep;
 		
-		Camera.mainCamera.transform.position = pos;
+		//step the desired position
+		desiredPos += step;
+		
+		//bound desired position
+		Vector3 crossSectionSize = GetCameraFrustumCrossSectionSize(Mathf.Abs(desiredPos.z));		
+		Vector3 min = boundingArea.bounds.min + (crossSectionSize*0.5f);
+		Vector3 max = boundingArea.bounds.max - (crossSectionSize*0.5f);
+		
+		desiredPos.x = Mathf.Clamp(desiredPos.x, min.x, max.x);
+		desiredPos.y = Mathf.Clamp(desiredPos.y, min.y, max.y);
+		desiredPos.z = Mathf.Clamp(desiredPos.z, -maxZoomDistance, -minZoomDistance);
+		
+		//ease towards desired position
+		Camera.mainCamera.transform.position = (Camera.mainCamera.transform.position + desiredPos) * 0.5f;
 	}
 	
 	#endregion

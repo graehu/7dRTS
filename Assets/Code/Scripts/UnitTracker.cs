@@ -48,8 +48,6 @@ public class UnitTracker : MonoBehaviour {
 	{
 		if(health == 0)
 		{
-			if(aimingReticle != null)
-				healthBar.renderer.material.SetFloat("_Cutoff", Mathf.InverseLerp(0, 100, health));
 			StopTracking();
 			if(Network.peerType != NetworkPeerType.Disconnected)
 			{
@@ -63,11 +61,28 @@ public class UnitTracker : MonoBehaviour {
 			else
 				Destroy(transform.parent.gameObject);
 		}
+		else
+		{
+			if(healthBar != null)
+				healthBar.renderer.material.SetFloat("_Cutoff", Mathf.InverseLerp(100, 0, health));
+		}
+		
+		float dir = AI.TargetDirection.x; 
+		
+		Weapon weapon = weapons[currentWeapon];
+		
+		if(weapon != null && weapon.IsFiring)
+			dir = weapon.Power.x;
+			
+		if (dir > 0) 
+			graphics.transform.localScale = new Vector3(1,1,1);
+		else
+			graphics.transform.localScale = new Vector3(-1,1,1);
 	}
 	
-	public void OnDamage()
+	public void OnDamage(int amount)
 	{
-		health = 0;
+		health -= amount;
 	}
 	
 	#endregion

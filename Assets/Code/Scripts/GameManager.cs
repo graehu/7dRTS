@@ -331,10 +331,7 @@ public class GameManager : MonoBehaviour
 		UnitSpawnPoint[] spawnPoints = (UnitSpawnPoint[]) FindSceneObjectsOfType(typeof(UnitSpawnPoint));
 		foreach(UnitSpawnPoint sp in spawnPoints)
 		{
-			if(sp.playerID == 0)
-			{
-				sp.SpawnLocal();
-			}
+			sp.SpawnLocal();
 		}
 		
 		isRunning = true;

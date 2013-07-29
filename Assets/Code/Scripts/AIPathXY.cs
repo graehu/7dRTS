@@ -180,7 +180,7 @@ public class AIPathXY : MonoBehaviour {
 	 * \see Start
 	 */
 	protected virtual void OnEnable () {
-		if (startHasRun) StartCoroutine (RepeatTrySearchPath ());
+		//if (startHasRun) StartCoroutine (RepeatTrySearchPath ());
 	}
 	
 	/** Tries to search for a path every #repathRate seconds.
@@ -327,14 +327,6 @@ public class AIPathXY : MonoBehaviour {
 	public void StepAlongPath(float _deltaTime)
 	{
 		Vector3 step = CalculateStep (GetFeetPosition(), _deltaTime);
-		
-		//Rotate to targetDirection (filled in by CalculateVelocity)
-		if (targetDirection != Vector3.zero) {
-			Vector3 euler = Quaternion.LookRotation (targetDirection).eulerAngles;
-			euler.x = 0;
-			euler.z = 0;
-			tr.rotation = Quaternion.Euler(euler);
-		}
 	
 		transform.Translate (step, Space.World);
 	}
@@ -345,6 +337,7 @@ public class AIPathXY : MonoBehaviour {
 	/** Relative direction to where the AI is heading.
 	 * Filled in by #CalculateVelocity */
 	protected Vector3 targetDirection;
+	public Vector3 TargetDirection { get { return targetDirection; } }
 	
 	protected float XYSqrMagnitude (Vector3 a, Vector3 b) {
 		float dx = b.x-a.x;
