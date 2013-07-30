@@ -8,6 +8,8 @@ public class UnitTracker : MonoBehaviour {
 	
 	public GameObject aimingReticle = null;
 	public GameObject healthBar = null;
+	public GameObject jetPack = null;
+	public GameObject selectionGraphic = null;
 	
 	public AIPathXY AI = null;
 	
@@ -46,7 +48,7 @@ public class UnitTracker : MonoBehaviour {
 	
 	void Update()
 	{
-		if(health == 0)
+		if(health <= 0)
 		{
 			StopTracking();
 			if(Network.peerType != NetworkPeerType.Disconnected)
@@ -75,9 +77,9 @@ public class UnitTracker : MonoBehaviour {
 			dir = weapon.Power.x;
 			
 		if (dir > 0) 
-			graphics.transform.localScale = new Vector3(1,1,1);
+			graphics.transform.localScale = new Vector3(2,2,2);
 		else
-			graphics.transform.localScale = new Vector3(-1,1,1);
+			graphics.transform.localScale = new Vector3(-2,2,2);
 	}
 	
 	public void OnDamage(int amount)

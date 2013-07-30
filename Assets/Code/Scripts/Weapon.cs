@@ -51,6 +51,8 @@ public class Weapon : MonoBehaviour {
 			muzzleInstance = GameObject.Instantiate(muzzleParticle) as GameObject;
 		}
 		
+		if(reloadBar.renderer != null)
+			reloadBar.renderer.enabled = true;
 		
 	}
 	public void EndFire()
@@ -60,7 +62,11 @@ public class Weapon : MonoBehaviour {
 	 	Destroy(muzzleInstance);
 		
 		animator.SetBool("Firing", false);
+		
+		if(reloadBar.renderer != null)
+			reloadBar.renderer.enabled = true;
 	}
+	
 	#endregion
 	#region private methods
 	// Use this for initialization

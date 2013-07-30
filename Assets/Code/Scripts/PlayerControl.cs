@@ -79,6 +79,7 @@ public class PlayerControl : MonoBehaviour {
 	}
 	
 	public int Index { get { return playerID; } }
+	public bool IsMine { get { return Network.peerType == NetworkPeerType.Disconnected || networkView.isMine; } }
 	
 	#endregion
 	
@@ -199,22 +200,21 @@ public class PlayerControl : MonoBehaviour {
 	}
 	
 	public void Select(UnitTracker _unit)
-	{
-		//debug
-		if(Index == 0)
-			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.green;
-		else
-			_unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.red;
-		
+	{		
 		//select
 		selectedUnits.Add(_unit);
+		
+		if(IsMine)
+			_unit.selectionGraphic.SetActive(true);
 	}
 	
 	public void DeselectAll()
 	{
-		//debug
-		foreach(UnitTracker unit in selectedUnits)
-			unit.graphics.GetComponentInChildren<Renderer>().material.color = Color.white;
+		if(IsMine)
+		{
+			foreach(UnitTracker unit in selectedUnits)
+				unit.selectionGraphic.SetActive(false);
+		}
 		
 		//deselect
 		selectedUnits.Clear();
@@ -389,6 +389,7 @@ public class PlayerControl : MonoBehaviour {
 			CameraControl cam = Camera.mainCamera.GetComponent<CameraControl>();
 			cam.MoveTo( GameManager.Instance.playerCamPositions[Index].position );
 		}
+		DeselectAll();
 	}
 	
 	void OnDrawGizmos()
