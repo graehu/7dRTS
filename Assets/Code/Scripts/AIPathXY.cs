@@ -123,7 +123,7 @@ public class AIPathXY : MonoBehaviour {
 	
 	/** Holds if the end-of-path is reached
 	 * \see TargetReached */
-	protected bool targetReached = false;
+	protected bool targetReached = true;
 	
 	/** Only when the previous path has been returned should be search for a new path */
 	protected bool canSearchAgain = true;

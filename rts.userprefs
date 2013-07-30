@@ -1,14 +1,6 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Scripts\Weapon.cs">
-    <Files>
-      <File FileName="Assets\Code\Scripts\Weapon.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\GameManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="1" Column="1" />
-      <File FileName="Assets\Code\Scripts\DamageInfo.cs" Line="1" Column="1" />
-      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="1" Column="1" />
-    </Files>
+  <MonoDevelop.Ide.Workbench>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
@@ -16,7 +8,7 @@
             <Node name="Assets" expanded="True">
               <Node name="Code" expanded="True">
                 <Node name="Scripts" expanded="True">
-                  <Node name="Weapon.cs" selected="True" />
+                  <Node name="NetworkManager.cs" selected="True" />
                 </Node>
               </Node>
               <Node name="Tools" expanded="True">
@@ -33,9 +25,7 @@
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="D:\rts\Assets\Tools\AstarPathfindingProject\Core\Path.cs" line="265" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
 </Properties>

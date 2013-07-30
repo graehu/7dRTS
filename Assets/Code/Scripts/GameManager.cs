@@ -55,8 +55,9 @@ public class GameManager : MonoBehaviour
 	
 	#region public variables
 	
-	public string gameType = "7dRTS_TooEasyGames";
-	public string gameName = "GameName";
+	public static string gameType = "7dRTS_TooEasyGames";
+	public static string gameName = "GameName";
+	public static string IP = "127.0.0.1";
 	
 	public PlayerControl playerContolPrefab = null;
 	
@@ -86,6 +87,7 @@ public class GameManager : MonoBehaviour
 		{
 			UnitTracker unit = allunits[i];
 			unit.AI.StepAlongPath(deltaTime);
+			unit.weapons[unit.CurrentWeapon].UpdateWeapon(deltaTime);
 		}
 		
 		for(int i = 0; i < PhysicsBody.bodies.Count; i++)
@@ -209,6 +211,17 @@ public class GameManager : MonoBehaviour
 				}
 					
 				GUILayout.Label("-------");
+				
+				GUILayout.BeginHorizontal();
+				
+				if(GUILayout.Button("Connect IP"))
+				{
+					NetworkManager.ConnectToServer(IP);
+				}
+				
+				IP = GUILayout.TextField(IP, GUILayout.MaxWidth(100));
+				
+				GUILayout.EndHorizontal();
 				
 				if(GUILayout.Button("Play Offline"))
 				{

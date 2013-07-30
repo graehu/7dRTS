@@ -32,12 +32,14 @@ public class Weapon : MonoBehaviour {
 	}
 	
 	#region private members
+	private int playerID = 0;
 	private float firetick = 0f;
 	#endregion
 	
 	#region public methods
-	public void BeginFire(Vector2 _power)
+	public void BeginFire(Vector2 _power, int _playerID)
 	{
+		playerID = _playerID;
 		power = _power;
 		isFiring = true;
 		
@@ -74,11 +76,11 @@ public class Weapon : MonoBehaviour {
 	{
 	}
 	// Update is called once per frame
-	void Update ()
+	public void UpdateWeapon (float deltaTime)
 	{ 
 		
 		if(isFiring)
-			firetick += Time.deltaTime;
+			firetick += deltaTime;
 		else 
 			firetick = 0;
 		
@@ -105,6 +107,8 @@ public class Weapon : MonoBehaviour {
 					
 					GameObject instProjectile = Instantiate(projectile, spawnPoint, Quaternion.identity) as GameObject;
 					Projectile projb = instProjectile.GetComponentInChildren<Projectile>() as Projectile;
+					
+					projb.playerID = playerID;
 					
 					if(muzzleInstance != null)
 					{

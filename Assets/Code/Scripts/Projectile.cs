@@ -5,6 +5,8 @@ public class Projectile : PhysicsBody {
 	
 	#region public members
 	
+	public int playerID = 0;
+	
 	public float firePower = 5f; 	// the inital power of the shot.
 	public float maxThrust = 1f; 	// the speed of the thruster with full fuel.
 	public float minThrust = 0f; 	// the speed of the thruster once the fuel runs out.
@@ -56,7 +58,7 @@ public class Projectile : PhysicsBody {
 			for(int i = 0; i < damagable.Length; i++)
 			{
 				UnitTracker unit = damagable[i].GetComponent<UnitTracker>();
-				if(unit != null && unit.playerID != GameManager.LocalPlayer.Index)
+				if(unit != null && unit.playerID != playerID)
 				{
 					unit.OnDamage(25);
 					validCollision = true;

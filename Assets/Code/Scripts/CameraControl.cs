@@ -10,7 +10,8 @@ public class CameraControl : MonoBehaviour {
 	public float edgeScrollSpeed = 10;
 	public float zoomSpeed = 10;
 	
-	public float minZoomDistance = 1;
+	public float minZoomDistance = 10;
+	public float maxZoomDistance = 45;
 	
 	public LayerMask movePlaneMask;
 	
@@ -69,6 +70,8 @@ public class CameraControl : MonoBehaviour {
 	void Start () 
 	{
 		desiredPos = transform.position;
+		//clamp max zoom to bounds
+		maxZoomDistance = Mathf.Min(maxZoomDistance, GetDistanceForCameraCrossSectionSize(boundingArea.bounds.size.x, boundingArea.bounds.size.y));
 	}
 	
 	// Update is called once per frame
@@ -109,14 +112,16 @@ public class CameraControl : MonoBehaviour {
 		//handle zooming
 		Vector3 zoomStep = Vector3.zero;
 		
-		float maxZoomDistance = GetDistanceForCameraCrossSectionSize(boundingArea.bounds.size.x, boundingArea.bounds.size.y);
-		
 		float zoomInput = Input.GetAxis("Mouse ScrollWheel");
 		
 		if(zoomInput != 0)
+		{
 			zoomStep = Camera.mainCamera.ScreenPointToRay(Input.mousePosition).direction * zoomSpeed * zoomInput;	
-		
-		step += zoomStep;
+			
+			Vector3 nextPos = desiredPos + zoomStep + step;
+			if(Mathf.Abs(nextPos.z) > minZoomDistance && Mathf.Abs(nextPos.z) < maxZoomDistance)
+				step += zoomStep;
+		}
 		
 		//step the desired position
 		desiredPos += step;

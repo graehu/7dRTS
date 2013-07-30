@@ -10,6 +10,7 @@ public class UnitTracker : MonoBehaviour {
 	public GameObject healthBar = null;
 	public GameObject jetPack = null;
 	public GameObject selectionGraphic = null;
+	public GameObject troopGraphic = null;
 	
 	public AIPathXY AI = null;
 	
@@ -32,12 +33,14 @@ public class UnitTracker : MonoBehaviour {
 	
 	public List<Weapon> weapons;
 	protected bool isTracking = false;
+	protected float dir = 1;
 	
 	#region monobehaviour methods
 	
 	// Use this for initialization
 	void Start()
 	{
+		dir = troopGraphic.transform.localScale.x;
 		StartTracking();
 	}
 	
@@ -55,9 +58,7 @@ public class UnitTracker : MonoBehaviour {
 			{
 				if(networkView.isMine)
 				{
-					Network.RemoveRPCs(networkView.viewID);
-					Network.RemoveRPCs(transform.parent.networkView.viewID);
-					Network.Destroy(transform.parent.networkView.viewID);
+					Network.Destroy(transform.parent.gameObject);
 				}
 			}
 			else
@@ -69,7 +70,8 @@ public class UnitTracker : MonoBehaviour {
 				healthBar.renderer.material.SetFloat("_Cutoff", Mathf.InverseLerp(100, 0, health));
 		}
 		
-		float dir = AI.TargetDirection.x; 
+		if(!AI.TargetReached)
+			dir = AI.TargetDirection.x; 
 		
 		Weapon weapon = weapons[currentWeapon];
 		
@@ -77,9 +79,9 @@ public class UnitTracker : MonoBehaviour {
 			dir = weapon.Power.x;
 			
 		if (dir > 0) 
-			graphics.transform.localScale = new Vector3(2,2,2);
+			troopGraphic.transform.localScale = new Vector3(1,1,1);
 		else
-			graphics.transform.localScale = new Vector3(-2,2,2);
+			troopGraphic.transform.localScale = new Vector3(-1,1,1);
 	}
 	
 	public void OnDamage(int amount)

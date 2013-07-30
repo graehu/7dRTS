@@ -92,6 +92,19 @@ public class NetworkManager : MonoBehaviour {
 		Debug.Log("Connecting To Server: " + server.gameName);
 	}
 	
+	public static void ConnectToServer(string _IP)
+	{		
+		Network.Connect(_IP, listenPort);
+			
+		MasterServer.ClearHostList();
+		
+		MasterServer.updateRate = 0;
+		
+		networkState = NetworkState.ClientConnecting;
+		
+		Debug.Log("Connecting To Server...");
+	}
+	
 	public static void RequestHostList(string _gameType)
 	{
 		MasterServer.ClearHostList();

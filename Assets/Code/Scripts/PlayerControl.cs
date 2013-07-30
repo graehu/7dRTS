@@ -123,9 +123,12 @@ public class PlayerControl : MonoBehaviour {
 			{
 				float powerScale = aimVector.magnitude/maxAimingDistance;
 				Vector2 power = aimVector.normalized*powerScale;
+				
+				Vector3 basePos = unit.transform.position;
+				unit.aimingReticle.transform.position = new Vector3(basePos.x+aimVector.x, basePos.y+aimVector.y, basePos.z);;
 				 
 				//Tells the unit to tell it's weapon to fire.
-				unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
+				unit.weapons[unit.CurrentWeapon].BeginFire(power, playerID);
 			}
 		}
 	}
@@ -136,24 +139,33 @@ public class PlayerControl : MonoBehaviour {
 		{	
 			if(unit.AI.TargetReached)
 			{
-				Vector2 aimVector = _pos - unit.transform.position;
-				Vector2 power = aimVector.normalized;
-				 
+				Vector3 power = (_pos - unit.transform.position).normalized; //use max power
+				Vector3 aimVector = power * maxAimingDistance;
+				
+				unit.aimingReticle.SetActive(true);
+				Vector3 basePos = unit.transform.position;
+				unit.aimingReticle.transform.position = new Vector3(basePos.x+aimVector.x, basePos.y+aimVector.y, basePos.z);;
+				
 				//Tells the unit to tell it's weapon to fire.
-				unit.gameObject.BroadcastMessage("BeginFire", power, SendMessageOptions.RequireReceiver);
+				unit.weapons[unit.CurrentWeapon].BeginFire(power, playerID);
 			}
 		}
 	}
 	
 	public void Aim(Vector2 _aimVector)
 	{
-		Vector2 dir = _aimVector;
-		Vector3 pos = aimingUnit.transform.position;
-		Vector3 endpoint = new Vector3(dir.x+pos.x, dir.y+pos.y, pos.z);
-		aimingUnit.aimingReticle.renderer.enabled = true;
-		aimingUnit.aimingReticle.transform.position = endpoint;
-
-		currentAction.aimVector = _aimVector;
+		foreach(UnitTracker unit in selectedUnits)
+		{	
+			if(unit.AI.TargetReached)
+			{
+				Vector3 pos = unit.transform.position;
+				Vector3 endpoint = new Vector3(_aimVector.x+pos.x, _aimVector.y+pos.y, pos.z);
+				unit.aimingReticle.SetActive(true);
+				unit.aimingReticle.transform.position = endpoint;
+		
+				currentAction.aimVector = _aimVector;
+			}
+		}
 	}
 	
 	public bool TrySelect(Vector3 _pos)
@@ -249,7 +261,7 @@ public class PlayerControl : MonoBehaviour {
 				
 				aiPath.MoveTo( _pos);
 			}
-			selectedUnits[i].aimingReticle.renderer.enabled = false;
+			selectedUnits[i].aimingReticle.SetActive(false);
 			selectedUnits[i].gameObject.BroadcastMessage("EndFire", SendMessageOptions.RequireReceiver);
 		}
 	}
