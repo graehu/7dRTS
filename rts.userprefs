@@ -1,6 +1,15 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Code\Scripts\GameManager.cs">
+    <Files>
+      <File FileName="Assets\Code\Scripts\GameManager.cs" Line="327" Column="7" />
+      <File FileName="Assets\Code\Scripts\Projectile.cs" Line="28" Column="25" />
+      <File FileName="Assets\Code\Scripts\Weapon.cs" Line="145" Column="6" />
+      <File FileName="Assets\Tools\AstarPathfindingProject\Core\AI\Seeker.cs" Line="415" Column="45" />
+      <File FileName="Assets\Code\Scripts\FollowTarget.cs" Line="26" Column="18" />
+      <File FileName="Assets\Code\Scripts\PlayerControl.cs" Line="74" Column="2" />
+      <File FileName="Assets\Code\Scripts\UnitTracker.cs" Line="94" Column="90" />
+    </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State expanded="True">
@@ -8,7 +17,7 @@
             <Node name="Assets" expanded="True">
               <Node name="Code" expanded="True">
                 <Node name="Scripts" expanded="True">
-                  <Node name="NetworkManager.cs" selected="True" />
+                  <Node name="GameManager.cs" selected="True" />
                 </Node>
               </Node>
               <Node name="Tools" expanded="True">
@@ -18,6 +27,11 @@
                   </Node>
                 </Node>
               </Node>
+            </Node>
+          </Node>
+          <Node name="Assembly-UnityScript" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="Test" expanded="True" />
             </Node>
           </Node>
         </State>

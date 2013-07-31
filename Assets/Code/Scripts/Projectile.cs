@@ -20,12 +20,15 @@ public class Projectile : PhysicsBody {
 	
 	public GameObject[] spawnOnDestroy = new GameObject[0];
 	
+	public AudioClip soundOnDestroy = null;
+	
 	#endregion
 	
 	
 	#region private members
 	
 	float fuelTick = 0;
+	float lastSoundTime = 0;
 	
 	#endregion
 
@@ -86,6 +89,13 @@ public class Projectile : PhysicsBody {
 				Destroy(instance, 3);
 			}
 			
+			//do sound
+			if(lastSoundTime != Time.time)
+			{
+				GameManager.Instance.PlaySoundFx(soundOnDestroy, 0.6f, transform.position);
+				lastSoundTime = Time.time;
+			}
+	
 			//destroy self
 			Destroy(parent);
 		}

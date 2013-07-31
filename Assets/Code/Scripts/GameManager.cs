@@ -8,7 +8,6 @@ public class GameManager : MonoBehaviour
 	public const int TURN_BUFFER_SIZE = 2;
 	public const float UNIT_SPACING = 2f;
 	
-	
 	public static GameManager Instance { get { return instance; } }
 	private static GameManager instance = null;
 	
@@ -59,12 +58,25 @@ public class GameManager : MonoBehaviour
 	public static string gameName = "GameName";
 	public static string IP = "127.0.0.1";
 	
+	public static float musicVolume = 1;
+	public static float fxVolume = 1;
+	
 	public PlayerControl playerContolPrefab = null;
 	
 	public bool localGame = false;
 	public int maxConnections = 1;
 	
 	public Transform[] playerCamPositions = new Transform[0];
+	
+	public GameObject winPopupPrefab = null;
+	public GameObject loosePopupPrefab = null;
+	
+	public AudioSource musicAudioSource = null;
+	public AudioSource fxAudioSource = null;
+	
+	public Texture2D controlsGUI = null;
+	
+	public bool isGameFinished = false;
 	
 	#endregion
 	
@@ -78,7 +90,29 @@ public class GameManager : MonoBehaviour
 	
 	#endregion
 	
-	#region protected variables
+	#region public methods
+	
+	public void PlaySoundFx(AudioClip _clip, float _volume, Vector3 _soundPos)
+	{
+		Vector2 camPos = Camera.mainCamera.transform.position;
+		Vector2 distance = (Vector2)_soundPos - camPos;
+		float maxDistance = 75;
+		
+		float volume = _volume * Mathf.Clamp01(1 - (distance.magnitude/maxDistance));
+		
+		if(_clip != null)
+			fxAudioSource.PlayOneShot(_clip, volume*fxVolume);
+	}
+	
+	public void PlaySoundFx2D(AudioClip _clip, float _volume)
+	{		
+		if(_clip != null)
+			fxAudioSource.PlayOneShot(_clip, _volume*fxVolume);
+	}
+
+	#endregion
+	
+	#region private methods
 	
 	void UpdateWorld(float deltaTime)
 	{
@@ -93,6 +127,31 @@ public class GameManager : MonoBehaviour
 		for(int i = 0; i < PhysicsBody.bodies.Count; i++)
 		{
 			PhysicsBody.bodies[i].Simulate(deltaTime);
+		}
+		
+		//test for win condition
+		if(!isGameFinished)
+		{
+			for(int i = 0; i < maxConnections + 1; i++)
+			{
+				if(GetTeam(i).Count == 0)
+				{
+					if(i == LocalPlayer.Index)
+					{
+						//lose
+						Instantiate(loosePopupPrefab);
+					}
+					else
+					{
+						//win
+						Instantiate(winPopupPrefab);
+					}
+					
+					isGameFinished = true;
+					
+					break;
+				}
+			}
 		}
 	}
 	
@@ -111,11 +170,13 @@ public class GameManager : MonoBehaviour
 	}
 	
 	void Update()
-	{
-		turnTick += Time.deltaTime;
-		
+	{				
 		if(isRunning)
-		{					
+		{		
+			Time.timeScale = isGameFinished ? 0 : 1;
+			
+			turnTick += Time.deltaTime;
+			
 			if(turnTick >= TurnLength)
 			{			
 				localPlayerControl.TryCaptureTurn(GameManager.CurrentTurn+GameManager.TURN_BUFFER_SIZE);
@@ -123,29 +184,33 @@ public class GameManager : MonoBehaviour
 				//TODO: cache this somewhere and validate number of player controls matches number of players
 				PlayerControl[] players = (PlayerControl[]) FindSceneObjectsOfType(typeof(PlayerControl));
 				
-				bool isUpToDate = true;
-				foreach(PlayerControl p in players)
-				{		
-					if(!p.IsUpToDate)
-					{						
-						isUpToDate = false;
-						
-						break;
-					}
-				}
-				
-				if(isUpToDate)
-				{									
+				//wait for all players to be ready
+				if(players.Length == maxConnections + 1)
+				{
+					bool isUpToDate = true;
 					foreach(PlayerControl p in players)
-					{
-						p.ProcessTurn(currentTurn);
+					{		
+						if(!p.IsUpToDate)
+						{						
+							isUpToDate = false;
+							
+							break;
+						}
 					}
 					
-					UpdateWorld(TurnLength);
-					
-					turnTick = turnTick - TurnLength;
-					
-					currentTurn++; //increment turn
+					if(isUpToDate)
+					{									
+						foreach(PlayerControl p in players)
+						{
+							p.ProcessTurn(currentTurn);
+						}
+						
+						UpdateWorld(TurnLength);
+						
+						turnTick = turnTick - TurnLength;
+						
+						currentTurn++; //increment turn
+					}
 				}
 			}
 		}
@@ -179,6 +244,9 @@ public class GameManager : MonoBehaviour
 			}
 			else
 			{
+				GUI.DrawTexture(Rect.MinMaxRect(Screen.width/2f - controlsGUI.width/4f, Screen.height - controlsGUI.height/2f,
+												Screen.width/2f + controlsGUI.width/4f, Screen.height), controlsGUI);
+				
 				GUILayout.BeginHorizontal();
 				
 					if(GUILayout.Button("Create Game"))
@@ -213,13 +281,13 @@ public class GameManager : MonoBehaviour
 				GUILayout.Label("-------");
 				
 				GUILayout.BeginHorizontal();
-				
-				if(GUILayout.Button("Connect IP"))
-				{
-					NetworkManager.ConnectToServer(IP);
-				}
-				
-				IP = GUILayout.TextField(IP, GUILayout.MaxWidth(100));
+					
+					if(GUILayout.Button("Connect IP"))
+					{
+						NetworkManager.ConnectToServer(IP);
+					}
+					
+					IP = GUILayout.TextField(IP, GUILayout.MaxWidth(100));
 				
 				GUILayout.EndHorizontal();
 				
@@ -227,6 +295,36 @@ public class GameManager : MonoBehaviour
 				{
 					BeginLocalGame();
 				}
+				
+				GUILayout.BeginHorizontal();
+				
+					GUILayout.Label("Music Volume");
+				
+					musicVolume = GUILayout.HorizontalSlider(musicVolume, 0, 1, GUILayout.MaxWidth(100));
+					musicAudioSource.volume = musicVolume;
+				
+				GUILayout.EndHorizontal();
+				
+				GUILayout.BeginHorizontal();
+				
+					GUILayout.Label("FX Volume");
+				
+					fxVolume = GUILayout.HorizontalSlider(fxVolume, 0, 1, GUILayout.MaxWidth(100));
+				
+				GUILayout.EndHorizontal();
+				
+				/*
+				GUILayout.BeginHorizontal();
+				
+					bool fullscreen = GUILayout.Toggle(Screen.fullScreen, "FullScreen");
+					if(Screen.fullScreen != fullscreen)
+					{
+						Resolution highRes = Screen.resolutions[Screen.resolutions.Length-1];
+						Screen.SetResolution(highRes.width, highRes.height, fullscreen);
+					}
+				
+				GUILayout.EndHorizontal();
+				*/
 				
 				if(GUILayout.Button("Quit"))
 				{

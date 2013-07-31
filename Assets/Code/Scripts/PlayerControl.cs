@@ -61,15 +61,9 @@ public class PlayerControl : MonoBehaviour {
 	{ 
 		get 
 		{ 
-			/*
-			//make sure we have the desired buffer
-			for(int i = 0; i < GameManager.TURN_BUFFER_SIZE; i++)
-			{
-				if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn + i) != null)
-					return true;
-			}
-			return false;
-			*/
+			//make sure we have spawned everything on turn 0
+			if(GameManager.CurrentTurn == 0 && GameManager.GetTeam(Index).Count == 0)
+				return false;
 			
 			if(turnBuffer.Find(t => t.turnID == GameManager.CurrentTurn) != null)
 				return true;
@@ -92,9 +86,9 @@ public class PlayerControl : MonoBehaviour {
 	public float distanceBeforeAreaSelect = 10f;
 	public float maxAimingDistance = 5f;
 	
-	//TODO: Move to protected
-	public List<UnitTracker> selectedUnits = new List<UnitTracker>();
-	public SelectionState selectState = SelectionState.None;
+	public AudioClip selectionSound = null;
+	public AudioClip moveSound = null;
+	public AudioClip attackSound = null;
 	
 	#endregion
 	
@@ -106,10 +100,15 @@ public class PlayerControl : MonoBehaviour {
 	protected ControlSnapshot currentSnapshot = new ControlSnapshot();
 	protected List<ControlSnapshot> turnBuffer = new List<ControlSnapshot>();
 	
+	protected List<UnitTracker> selectedUnits = new List<UnitTracker>();
+	protected SelectionState selectState = SelectionState.None;
+	
 	protected UnitTracker aimingUnit = null;
 	
 	protected Vector3 lastMouseDownPos = Vector3.zero;
 	protected Vector3 lastMouseUpPos = Vector3.zero;
+	
+	protected float commandSoundTimeStamp = 0;
 	
 	#endregion
 	
@@ -131,6 +130,7 @@ public class PlayerControl : MonoBehaviour {
 				unit.weapons[unit.CurrentWeapon].BeginFire(power, playerID);
 			}
 		}
+		GameManager.Instance.PlaySoundFx2D(attackSound, 0.6f);
 	}
 	
 	public void FireAtPoint(Vector3 _pos)
@@ -150,6 +150,7 @@ public class PlayerControl : MonoBehaviour {
 				unit.weapons[unit.CurrentWeapon].BeginFire(power, playerID);
 			}
 		}
+		PlayCommandSound(attackSound);
 	}
 	
 	public void Aim(Vector2 _aimVector)
@@ -182,6 +183,9 @@ public class PlayerControl : MonoBehaviour {
 			Select(unit);
 			r = true;
 		}
+		
+		if(r) PlayCommandSound(selectionSound);
+		
 		return r;
 	}
 	
@@ -207,6 +211,8 @@ public class PlayerControl : MonoBehaviour {
 				r = true;
 			}
 		}
+		
+		if(r) PlayCommandSound(selectionSound);
 		
 		return r;
 	}
@@ -264,6 +270,9 @@ public class PlayerControl : MonoBehaviour {
 			selectedUnits[i].aimingReticle.SetActive(false);
 			selectedUnits[i].gameObject.BroadcastMessage("EndFire", SendMessageOptions.RequireReceiver);
 		}
+		
+		if(selectedUnits.Count > 0)
+			PlayCommandSound(moveSound);
 	}
 	
 	public UnitTracker GetUnitAtPosition(Vector3 _pos)
@@ -278,6 +287,15 @@ public class PlayerControl : MonoBehaviour {
 			}
 		}
 		return null;
+	}
+	
+	public void PlayCommandSound(AudioClip _clip)
+	{
+		if(IsMine && Time.time > commandSoundTimeStamp + 1f)
+		{
+			commandSoundTimeStamp = Time.time;
+			GameManager.Instance.PlaySoundFx2D(moveSound, 0.6f);
+		}
 	}
 	
 	#endregion

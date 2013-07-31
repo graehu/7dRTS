@@ -35,6 +35,8 @@ public class UnitTracker : MonoBehaviour {
 	protected bool isTracking = false;
 	protected float dir = 1;
 	
+	public AudioClip[] hurtSounds = new AudioClip[0];
+	
 	#region monobehaviour methods
 	
 	// Use this for initialization
@@ -87,6 +89,10 @@ public class UnitTracker : MonoBehaviour {
 	public void OnDamage(int amount)
 	{
 		health -= amount;
+		if(hurtSounds.Length > 0)
+		{
+			GameManager.Instance.PlaySoundFx2D( hurtSounds[Random.Range(0,hurtSounds.Length)], 0.5f );
+		}
 	}
 	
 	#endregion

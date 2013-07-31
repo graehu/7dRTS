@@ -5,6 +5,8 @@ public class Weapon : MonoBehaviour {
 	
 	#region public members
 	
+	public AudioClip fireSound = null;
+	
 	public GameObject muzzleParticle = null; //Plays instantly at spawn point
 	public GameObject impactParticles = null; //Plays at impact point
 	public GameObject trailParticles = null;  //attaches to projectiles
@@ -34,6 +36,7 @@ public class Weapon : MonoBehaviour {
 	#region private members
 	private int playerID = 0;
 	private float firetick = 0f;
+	private static float lastSoundTime = 0;
 	#endregion
 	
 	#region public methods
@@ -137,6 +140,13 @@ public class Weapon : MonoBehaviour {
 					}
 					
 					projb.ApplyForce(power*projb.firePower, ForceMode.Impulse);
+					
+					//play sound
+					if(lastSoundTime != Time.time)
+					{
+						GameManager.Instance.PlaySoundFx(fireSound, 0.4f, transform.position);
+						lastSoundTime = Time.time;
+					}
 				}
 				else Debug.Log("The projectile field is blank or the object is null");
 				break;

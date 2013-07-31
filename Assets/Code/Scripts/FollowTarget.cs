@@ -8,6 +8,8 @@ public class FollowTarget : MonoBehaviour {
 	
 	public float maxSpeed = 10;
 	public float maxTurningSpeed = 10;
+	
+	public bool lockZ = false;
 		
 	// Update is called once per frame
 	void LateUpdate () 
@@ -31,12 +33,16 @@ public class FollowTarget : MonoBehaviour {
 		}
 		else
 			return;
-			
+		
+		float z = transform.position.z;
 			
 		if(maxSpeed > 0)
 			transform.position = Vector3.MoveTowards( transform.position, t.position, speed);
 		else
 			transform.position = t.position;
+		
+		if(lockZ)
+			transform.position = new Vector3(transform.position.x,transform.position.y,z);
 		
 		/*if(maxTurningSpeed > 0)
 			transform.rotation = Quaternion.RotateTowards( transform.rotation, t.rotation, turningSpeed);
